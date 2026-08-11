@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(ANALYST)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  auditLogs AuditLog[]
+}
+
+model Customer {
+  id              String         @id @default(cuid())
+  firstName       String
+  lastName        String
+  dateOfBirth     DateTime
+  idNumber        String         @unique
+  country         String
+  address         String?
+  phone           String?
+  email           String?
+  occupation      String?
+  annualIncome    Decimal?       @db.Decimal(15, 2)
+  sourceOfFunds   String?
+  kycStatus       KYCStatus      @default(PENDING)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  kycChecks       KYCCheck[]
+  riskAssessments RiskAssessment[]
+  transactions    Transaction[]
+  amlAlerts       AMLAlert[]
+}
+
+model KYCCheck {
+  id         String       @id @default(cuid())
+  customerId String
+  checkType  KYCCheckType
+  status     CheckStatus
+  score      Int?
+  notes      String?
+  createdAt  DateTime     @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+}
+
+model RiskAssessment {
+  id         String    @id @default(cuid())
+  customerId String
+  score      Int
+  level      RiskLevel
+  reasons    Json
+  createdAt  DateTime  @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+}
+
+model Transaction {
+  id         String            @id @default(cuid())
+  customerId String
+  amount     Decimal           @db.Decimal(15, 2)
+  currency   String            @default("ZAR")
+  country    String
+  type       TransactionType
+  status     TransactionStatus @default(COMPLETED)
+  timestamp  DateTime          @default(now())
+
+  customer Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  amlAlerts AMLAlert[]
+
+  @@index([customerId])
+  @@index([timestamp])
+}
+
+model AMLAlert {
+  id            String       @id @default(cuid())
+  customerId    String
+  transactionId String?
+  type          AMLAlertType
+  severity      RiskLevel
+  status        AlertStatus  @default(OPEN)
+  description   String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  customer    Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@index([customerId])
+  @@index([status])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  details   Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+enum UserRole {
+  ADMIN
+  COMPLIANCE_OFFICER
+  ANALYST
+  VIEWER
+}
+
+enum KYCStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum KYCCheckType {
+  IDENTITY
+  ADDRESS
+  DATE_OF_BIRTH
+  EMAIL
+  PHONE
+}
+
+enum CheckStatus {
+  PENDING
+  PASSED
+  FAILED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  TRANSFER
+  PAYMENT
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+enum AMLAlertType {
+  LARGE_TRANSACTION
+  STRUCTURING
+  RAPID_MOVEMENT
+  HIGH_RISK_COUNTRY
+  UNUSUAL_ACTIVITY
+  PEP_MATCH
+  INCOME_MISMATCH
+}
+
+enum AlertStatus {
+  OPEN
+  INVESTIGATING
+  ESCALATED
+  RESOLVED
+  FALSE_POSITIVE
+}
