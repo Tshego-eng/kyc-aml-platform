@@ -5,6 +5,8 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 
 import authRoutes from "./routes/auth.routes";
+import rbacRoutes from "./routes/rbac.routes";
+import auditRoutes from "./routes/audit.routes";
 
 dotenv.config();
 
@@ -60,6 +62,9 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/api/auth", authRoutes);
 
+app.use("/api/rbac", rbacRoutes);
+
+app.use("/api/audit", auditRoutes);
 // -------------------------
 // Start server
 // -------------------------
