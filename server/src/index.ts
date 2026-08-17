@@ -3,10 +3,12 @@ import cors from "cors";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-
+import customerRoutes from "./routes/customer.routes";
 import authRoutes from "./routes/auth.routes";
 import rbacRoutes from "./routes/rbac.routes";
 import auditRoutes from "./routes/audit.routes";
+import kycRoutes from "./routes/kyc.routes";
+import kycReviewRoutes from "./routes/kyc-review.routes";
 
 dotenv.config();
 
@@ -65,6 +67,13 @@ app.use("/api/auth", authRoutes);
 app.use("/api/rbac", rbacRoutes);
 
 app.use("/api/audit", auditRoutes);
+
+app.use("/api/customers", customerRoutes);
+
+app.use("/api", kycRoutes);
+
+app.use("/api", kycReviewRoutes);
+
 // -------------------------
 // Start server
 // -------------------------

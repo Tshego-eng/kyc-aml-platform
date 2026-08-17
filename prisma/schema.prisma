@@ -16,29 +16,34 @@ model User {
   updatedAt    DateTime @updatedAt
 
   auditLogs AuditLog[]
+  kycReviews KYCReview[]
 }
 
 model Customer {
-  id              String         @id @default(cuid())
-  firstName       String
-  lastName        String
-  dateOfBirth     DateTime
-  idNumber        String         @unique
-  country         String
-  address         String?
-  phone           String?
-  email           String?
-  occupation      String?
-  annualIncome    Decimal?       @db.Decimal(15, 2)
-  sourceOfFunds   String?
-  kycStatus       KYCStatus      @default(PENDING)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id            String    @id @default(cuid())
+  firstName     String
+  lastName      String
+  dateOfBirth   DateTime
+  idNumber      String    @unique
+  country       String
+  address       String?
+  phone         String?
+  email         String?
+  occupation    String?
+  annualIncome  Decimal?  @db.Decimal(15, 2)
+  sourceOfFunds String?
+  kycStatus     KYCStatus @default(PENDING)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   kycChecks       KYCCheck[]
+  kycReviews      KYCReview[]
   riskAssessments RiskAssessment[]
   transactions    Transaction[]
   amlAlerts       AMLAlert[]
+
+  @@index([kycStatus])
+  @@index([createdAt])
 }
 
 model KYCCheck {
@@ -78,7 +83,7 @@ model Transaction {
   status     TransactionStatus @default(COMPLETED)
   timestamp  DateTime          @default(now())
 
-  customer Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer  Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
   amlAlerts AMLAlert[]
 
   @@index([customerId])
@@ -116,6 +121,24 @@ model AuditLog {
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+  @@index([createdAt])
+}
+
+model KYCReview {
+  id         String         @id @default(cuid())
+  customerId String
+  reviewerId String
+  decision   ReviewDecision
+  reason     String
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  reviewer User     @relation(fields: [reviewerId], references: [id], onDelete: Restrict)
+
+  @@index([customerId])
+  @@index([reviewerId])
+  @@index([decision])
   @@index([createdAt])
 }
 
@@ -183,4 +206,11 @@ enum AlertStatus {
   ESCALATED
   RESOLVED
   FALSE_POSITIVE
+}
+
+
+enum ReviewDecision {
+  APPROVE
+  REJECT
+  REQUEST_REVIEW
 }
