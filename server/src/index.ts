@@ -9,6 +9,9 @@ import rbacRoutes from "./routes/rbac.routes";
 import auditRoutes from "./routes/audit.routes";
 import kycRoutes from "./routes/kyc.routes";
 import kycReviewRoutes from "./routes/kyc-review.routes";
+import riskRoutes from "./routes/risk.routes";
+import transactionRoutes from "./routes/transaction.routes";
+import amlAlertRoutes from "./routes/aml-alert.routes";
 
 dotenv.config();
 
@@ -73,6 +76,12 @@ app.use("/api/customers", customerRoutes);
 app.use("/api", kycRoutes);
 
 app.use("/api", kycReviewRoutes);
+
+app.use("/api", riskRoutes);
+
+app.use("/api", transactionRoutes);
+
+app.use("/api", amlAlertRoutes);
 
 // -------------------------
 // Start server

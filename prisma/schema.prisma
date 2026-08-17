@@ -17,6 +17,9 @@ model User {
 
   auditLogs AuditLog[]
   kycReviews KYCReview[]
+  assignedCases AMLCase[] @relation("AssignedCases")
+investigationNotes InvestigationNote[] @relation("InvestigationNotes")
+caseEvidenceUploads CaseEvidence[] @relation("CaseEvidenceUploads")
 }
 
 model Customer {
@@ -41,6 +44,7 @@ model Customer {
   riskAssessments RiskAssessment[]
   transactions    Transaction[]
   amlAlerts       AMLAlert[]
+  amlCases        AMLCase[]
 
   @@index([kycStatus])
   @@index([createdAt])
@@ -104,8 +108,67 @@ model AMLAlert {
   customer    Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
   transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
 
+  case AMLCase?
+  
   @@index([customerId])
   @@index([status])
+}
+model AMLCase {
+  id              String       @id @default(cuid())
+  alertId         String       @unique
+  customerId      String
+  assignedToId    String?
+  status          CaseStatus   @default(OPEN)
+  priority        RiskLevel    @default(MEDIUM)
+  decision        CaseDecision?
+  summary         String?
+  resolution      String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  closedAt        DateTime?
+
+  alert           AMLAlert     @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  customer        Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  assignedTo      User?        @relation("AssignedCases", fields: [assignedToId], references: [id], onDelete: SetNull)
+  notes           InvestigationNote[]
+  evidence        CaseEvidence[]
+
+  @@index([customerId])
+  @@index([assignedToId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model InvestigationNote {
+  id          String   @id @default(cuid())
+  caseId      String
+  authorId    String
+  note        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  case        AMLCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  author      User     @relation("InvestigationNotes", fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([caseId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model CaseEvidence {
+  id          String   @id @default(cuid())
+  caseId      String
+  uploadedBy  String
+  fileName    String
+  fileType    String?
+  description String?
+  createdAt   DateTime @default(now())
+
+  case        AMLCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  uploader    User     @relation("CaseEvidenceUploads", fields: [uploadedBy], references: [id], onDelete: Restrict)
+
+  @@index([caseId])
+  @@index([uploadedBy])
 }
 
 model AuditLog {
@@ -213,4 +276,18 @@ enum ReviewDecision {
   APPROVE
   REJECT
   REQUEST_REVIEW
+}
+
+enum CaseStatus {
+  OPEN
+  INVESTIGATING
+  ESCALATED
+  RESOLVED
+  CLOSED
+}
+enum CaseDecision {
+  NO_ACTION
+  SUSPICIOUS_ACTIVITY
+  FALSE_POSITIVE
+  ESCALATE
 }
