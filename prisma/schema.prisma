@@ -112,6 +112,7 @@ model AMLAlert {
   
   @@index([customerId])
   @@index([status])
+  @@unique([transactionId, type])
 }
 model AMLCase {
   id              String       @id @default(cuid())

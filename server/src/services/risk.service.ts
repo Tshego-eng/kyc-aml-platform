@@ -1,4 +1,5 @@
 import prisma from "../lib/prisma";
+import { Prisma } from "@prisma/client";
 
 const HIGH_RISK_COUNTRIES = [
   "CountryA",
@@ -13,6 +14,13 @@ const HIGH_RISK_OCCUPATIONS = [
   "crypto trader",
 ];
 
+const riskRank = {
+  LOW: 1,
+  MEDIUM: 2,
+  HIGH: 3,
+  CRITICAL: 4,
+} as const;
+
 export const calculateCustomerRisk = async (
   customerId: string
 ) => {
@@ -22,6 +30,8 @@ export const calculateCustomerRisk = async (
     },
     include: {
       kycChecks: true,
+      amlAlerts: true,
+      transactions: true,
     },
   });
 
@@ -124,9 +134,9 @@ export const calculateCustomerRisk = async (
   };
 };
 
-export const createRiskAssessment = async (
+export async function assessCustomerRisk(
   customerId: string
-) => {
+) {
   const result = await calculateCustomerRisk(customerId);
 
   const assessment = await prisma.riskAssessment.create({
@@ -139,4 +149,59 @@ export const createRiskAssessment = async (
   });
 
   return assessment;
+}
+
+export const createRiskAssessment = async (
+  customerId: string
+) => {
+  const result = await calculateCustomerRisk(customerId);
+
+  const currentAssessment =
+    await prisma.riskAssessment.findFirst({
+      where: {
+        customerId,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+  const currentRank = currentAssessment
+    ? riskRank[currentAssessment.level]
+    : 0;
+  const newRank = riskRank[result.level];
+  const effectiveResult =
+    currentAssessment && newRank < currentRank
+      ? {
+          score: currentAssessment.score,
+          level: currentAssessment.level,
+          reasons:
+            currentAssessment.reasons as Prisma.InputJsonValue,
+        }
+      : result;
+
+  const assessment = await prisma.riskAssessment.create({
+    data: {
+      customerId,
+      score: effectiveResult.score,
+      level: effectiveResult.level,
+      reasons: effectiveResult.reasons,
+    },
+  });
+
+  return assessment;
+  
 };
+
+export async function getCustomerRiskHistory(
+  customerId: string
+) {
+  return prisma.riskAssessment.findMany({
+    where: {
+      customerId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+}

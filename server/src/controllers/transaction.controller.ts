@@ -39,8 +39,9 @@ export const createTransactionController = async (
         type,
       });
 
-    const alerts =
-      await createAMLAlerts(transaction.id);
+    const alerts = await createAMLAlerts(
+      transaction.id
+    );
 
     return res.status(201).json({
       message:

@@ -224,3 +224,72 @@ export const addInvestigationNote = async (
     },
   });
 };
+
+export async function getCaseById(caseId: string) {
+  const complianceCase = await prisma.aMLCase.findUnique({
+    where: {
+      id: caseId,
+    },
+    include: {
+      customer: true,
+      alert: true,
+    },
+  });
+
+  if (!complianceCase) {
+    throw new Error("CASE_NOT_FOUND");
+  }
+
+  return complianceCase;
+}
+
+const allowedTransitions: Record<string, string[]> = {
+  OPEN: ["INVESTIGATING", "FALSE_POSITIVE"],
+  INVESTIGATING: ["ESCALATED", "RESOLVED", "FALSE_POSITIVE"],
+  ESCALATED: ["INVESTIGATING", "RESOLVED"],
+  RESOLVED: [],
+  FALSE_POSITIVE: [],
+};
+
+export const updateAMLCaseStatus = async (
+  caseId: string,
+  newStatus:
+    | "OPEN"
+    | "INVESTIGATING"
+    | "ESCALATED"
+    | "RESOLVED"
+    | "CLOSED",
+  resolution?: string
+) => {
+  const amlCase = await prisma.aMLCase.findUnique({
+    where: {
+      id: caseId,
+    },
+  });
+
+  if (!amlCase) {
+    throw new Error("CASE_NOT_FOUND");
+  }
+
+  if (
+    !allowedTransitions[amlCase.status]?.includes(
+      newStatus
+    ) &&
+    amlCase.status !== newStatus
+  ) {
+    throw new Error("INVALID_STATUS_TRANSITION");
+  }
+
+  return prisma.aMLCase.update({
+    where: {
+      id: caseId,
+    },
+    data: {
+      status: newStatus,
+      ...(resolution !== undefined && { resolution }),
+      ...(newStatus === "RESOLVED" && {
+        closedAt: new Date(),
+      }),
+    },
+  });
+};

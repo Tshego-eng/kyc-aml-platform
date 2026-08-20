@@ -9,6 +9,8 @@ import {
   getAMLCaseController,
   assignAMLCaseController,
   addInvestigationNoteController,
+  getCase,
+  updateAMLCaseStatusController,
 } from "../controllers/aml-case.controller";
 
 const router = Router();
@@ -55,6 +57,16 @@ router.patch(
   assignAMLCaseController
 );
 
+router.patch(
+  "/aml-cases/:id/status",
+  authenticate,
+  authorize(
+    "ADMIN",
+    "COMPLIANCE_OFFICER"
+  ),
+  updateAMLCaseStatusController
+);
+
 router.post(
   "/aml-cases/:id/notes",
   authenticate,
@@ -63,6 +75,17 @@ router.post(
     "COMPLIANCE_OFFICER"
   ),
   addInvestigationNoteController
+);
+
+router.get(
+  "/cases/:id",
+  authenticate,
+  authorize(
+    "ADMIN",
+    "COMPLIANCE_OFFICER",
+    "ANALYST"
+  ),
+  getCase
 );
 
 export default router;

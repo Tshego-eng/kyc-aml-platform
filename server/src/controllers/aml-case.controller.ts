@@ -6,7 +6,10 @@ import {
   getAMLCaseById,
   assignAMLCase,
   addInvestigationNote,
+  updateAMLCaseStatus,
 } from "../services/aml-case.service";
+import { AuthenticatedRequest } from "../middleware/auth.middleware";
+import prisma from "../lib/prisma";
 
 export const createAMLCaseController = async (
   req: Request,
@@ -208,6 +211,79 @@ export const assignAMLCaseController =
     }
   };
 
+export const updateAMLCaseStatusController = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const { id } = req.params;
+    const caseId = Array.isArray(id) ? id[0] : id;
+
+    if (!caseId) {
+      return res.status(400).json({
+        error: "Case id is required",
+      });
+    }
+
+    const { status: newStatus, resolution } = req.body;
+    const assessment = await prisma.aMLCase.findUnique({
+      where: {
+        id: caseId,
+      },
+      select: {
+        status: true,
+      },
+    });
+
+    if (!assessment) {
+      return res.status(404).json({
+        error: "AML case not found",
+      });
+    }
+
+    const previousStatus = assessment.status;
+    const updatedCase = await updateAMLCaseStatus(
+      caseId,
+      newStatus,
+      resolution
+    );
+
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user?.userId,
+        action: "CASE_STATUS_CHANGED",
+        entity: "AMLCase",
+        entityId: caseId,
+        details: {
+          previousStatus,
+          newStatus,
+          resolution,
+        },
+      },
+    });
+
+    return res.json({
+      message: "AML case status updated successfully",
+      case: updatedCase,
+    });
+  } catch (error) {
+    console.error("Update AML case status error:", error);
+
+    if (
+      error instanceof Error &&
+      error.message === "INVALID_STATUS_TRANSITION"
+    ) {
+      return res.status(409).json({
+        error: "Invalid AML case status transition",
+      });
+    }
+
+    return res.status(500).json({
+      error: "Failed to update AML case status",
+    });
+  }
+};
+
 export const addInvestigationNoteController =
   async (
     req: Request,
@@ -277,3 +353,41 @@ export const addInvestigationNoteController =
       });
     }
   };
+
+  export async function getCase(
+  req: Request,
+  res: Response
+) {
+  try {
+    const { id } = req.params;
+      const caseId = Array.isArray(id) ? id[0] : id;
+
+      if (!caseId) {
+        return res.status(400).json({
+          error: "Case id is required",
+        });
+      }
+
+      const complianceCase = await getAMLCaseById(
+        caseId
+      );
+
+    return res.status(200).json({
+      case: complianceCase,
+    });
+  } catch (error) {
+    console.error("Get case error:", error);
+     if (
+      error instanceof Error &&
+      error.message === "CASE_NOT_FOUND"
+    ) {
+      return res.status(404).json({
+        error: "Compliance case not found",
+      });
+    }
+
+    return res.status(500).json({
+      error: "Failed to retrieve compliance case",
+    });
+  }
+}

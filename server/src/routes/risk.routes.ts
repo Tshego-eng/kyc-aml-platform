@@ -6,6 +6,7 @@ import { authorize } from "../middleware/rbac.middleware";
 import {
   calculateRiskController,
   createRiskAssessmentController,
+  assessRisk,
 } from "../controllers/risk.controller";
 
 const router = Router();
@@ -29,6 +30,17 @@ router.post(
     "COMPLIANCE_OFFICER"
   ),
   createRiskAssessmentController
+);
+
+router.post(
+  "/customers/:id/risk-assessment",
+  authenticate,
+  authorize(
+    "ADMIN",
+    "COMPLIANCE_OFFICER",
+    "ANALYST"
+  ),
+  assessRisk
 );
 
 export default router;

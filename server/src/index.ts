@@ -13,6 +13,8 @@ import riskRoutes from "./routes/risk.routes";
 import transactionRoutes from "./routes/transaction.routes";
 import amlAlertRoutes from "./routes/aml-alert.routes";
 import amlCaseRoutes from "./routes/aml-case.routes";
+import dashboardRoutes from "./routes/dashboard.routes";
+
 
 dotenv.config();
 
@@ -85,6 +87,9 @@ app.use("/api", transactionRoutes);
 app.use("/api", amlAlertRoutes);
 
 app.use("/api", amlCaseRoutes);
+
+app.use("/api", dashboardRoutes);
+
 
 // -------------------------
 // Start server
