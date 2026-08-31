@@ -1,6 +1,5 @@
 import prisma from "../lib/prisma";
-import { CaseStatus, RegulatoryDecision } from "@prisma/client";
-
+import { CaseStatus } from "@prisma/client";
 
 export const createAMLCase = async (
   alertId: string
@@ -333,17 +332,11 @@ const allowedTransitions: Record<CaseStatus, CaseStatus[]> = {
 export const updateAMLCaseStatus = async (
   caseId: string,
   newStatus: CaseStatus,
-  resolution?: string,
-  regulatoryDecision?: RegulatoryDecision,
-  regulatoryReason?: string
+  resolution?: string
 ) => {
   const amlCase = await prisma.aMLCase.findUnique({
     where: {
       id: caseId,
-    },
-    include: {
-      notes: true,
-      evidence: true,
     },
   });
 
@@ -357,34 +350,14 @@ export const updateAMLCaseStatus = async (
     CaseStatus.ESCALATED,
   ];
 
+  
+
   if (
     requiresResolution.includes(newStatus) &&
     !resolution?.trim()
   ) {
     throw new Error("RESOLUTION_REQUIRED");
   }
-  if (
-  ([CaseStatus.RESOLVED, CaseStatus.FALSE_POSITIVE] as CaseStatus[]).includes(
-    newStatus
-  ) &&
-  amlCase.notes.length === 0 &&
-  amlCase.evidence.length === 0
-) {
-  throw new Error("INVESTIGATION_CONTEXT_REQUIRED");
-}
-  if (
-  ["RESOLVED", "FALSE_POSITIVE"].includes(newStatus) &&
-  !regulatoryDecision
-) {
-  throw new Error("REGULATORY_DECISION_REQUIRED");
-}
-if (
-  regulatoryDecision &&
-  !regulatoryReason?.trim()
-) {
-  throw new Error("REGULATORY_REASON_REQUIRED");
-}
-
 
   if (
     !allowedTransitions[amlCase.status]?.includes(
@@ -401,20 +374,10 @@ if (
     },
     data: {
       status: newStatus,
-      ...(resolution !== undefined && {
-        resolution: resolution.trim(),
+      ...(resolution !== undefined && { resolution }),
+      ...(["RESOLVED", "CLOSED"].includes(newStatus) && {
+        closedAt: new Date(),
       }),
-      ...(regulatoryDecision !== undefined && {
-        regulatoryDecision,
-      }),
-      ...(regulatoryReason !== undefined && {
-        regulatoryReason: regulatoryReason.trim(),
-      }),
-      ...(
-        ["RESOLVED", "CLOSED", "FALSE_POSITIVE"].includes(newStatus) && {
-          closedAt: new Date(),
-        }
-      ),
     },
   });
 };

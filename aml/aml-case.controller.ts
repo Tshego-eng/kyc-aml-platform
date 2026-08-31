@@ -8,10 +8,10 @@ import {
   addInvestigationNote,
   addCaseEvidence,
   updateAMLCaseStatus,
-} from "../services/aml-case.service";
-import { AuthenticatedRequest } from "../middleware/auth.middleware";
-import prisma from "../lib/prisma";
-import { CaseStatus, RegulatoryDecision } from "@prisma/client";
+} from "../server/src/services/aml-case.service";
+import { AuthenticatedRequest } from "../server/src/middleware/auth.middleware";
+import prisma from "../server/src/lib/prisma";
+import { CaseStatus } from "@prisma/client";
 
 export const createAMLCaseController = async (
   req: Request,
@@ -227,12 +227,7 @@ export const updateAMLCaseStatusController = async (
       });
     }
 
-    const {
-      status: newStatus,
-      resolution,
-      regulatoryDecision,
-      regulatoryReason,
-    } = req.body;
+    const { status: newStatus, resolution, regulatoryDecision, regulatoryReason, } = req.body;
     if (
       !Object.values(CaseStatus).includes(newStatus)
     ) {
@@ -262,7 +257,7 @@ export const updateAMLCaseStatusController = async (
       caseId,
       newStatus,
       resolution,
-      regulatoryDecision as RegulatoryDecision | undefined,
+      regulatoryDecision,
       regulatoryReason
     );
 
@@ -327,16 +322,6 @@ export const updateAMLCaseStatusController = async (
           "regulatoryReason is required when a regulatory decision is provided",
       });
     }
-
-    if (
-  error instanceof Error &&
-  error.message === "INVESTIGATION_CONTEXT_REQUIRED"
-) {
-  return res.status(400).json({
-    error:
-      "Investigation notes or evidence are required before closing the AML case",
-  });
-}
 
     return res.status(500).json({
       error: "Failed to update AML case status",

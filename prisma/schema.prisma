@@ -15,6 +15,7 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  regulatoryReports RegulatoryReport[]
   auditLogs AuditLog[]
   kycReviews KYCReview[]
   assignedCases AMLCase[] @relation("AssignedCases")
@@ -45,6 +46,7 @@ model Customer {
   transactions    Transaction[]
   amlAlerts       AMLAlert[]
   amlCases        AMLCase[]
+  regulatoryReports RegulatoryReport[]
 
   @@index([kycStatus])
   @@index([createdAt])
@@ -127,15 +129,43 @@ model AMLCase {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
   closedAt        DateTime?
+  regulatoryDecision RegulatoryDecision?
+  regulatoryReason   String?
 
   alert           AMLAlert     @relation(fields: [alertId], references: [id], onDelete: Cascade)
   customer        Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
   assignedTo      User?        @relation("AssignedCases", fields: [assignedToId], references: [id], onDelete: SetNull)
   notes           InvestigationNote[]
   evidence        CaseEvidence[]
+  regulatoryReports RegulatoryReport[]
 
   @@index([customerId])
   @@index([assignedToId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model RegulatoryReport {
+  id                 String               @id @default(cuid())
+  caseId             String
+  customerId         String
+  submittedById      String
+  reportType         RegulatoryReportType
+  status             RegulatoryReportStatus @default(DRAFT)
+  reason             String
+  referenceNumber    String?
+  submittedAt       DateTime?
+  acknowledgedAt    DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  amlCase            AMLCase              @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  customer           Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  submittedBy        User                 @relation(fields: [submittedById], references: [id], onDelete: Restrict)
+
+  @@index([caseId])
+  @@index([customerId])
+  @@index([submittedById])
   @@index([status])
   @@index([createdAt])
 }
@@ -213,6 +243,16 @@ enum UserRole {
   VIEWER
 }
 
+enum RegulatoryReportType {
+  SUSPICIOUS_ACTIVITY
+}
+
+enum RegulatoryReportStatus {
+  DRAFT
+  SUBMITTED
+  ACKNOWLEDGED
+}
+
 enum KYCStatus {
   PENDING
   VERIFIED
@@ -254,6 +294,13 @@ enum TransactionStatus {
   REVERSED
 }
 
+enum RegulatoryDecision {
+  FALSE_POSITIVE
+  NO_FURTHER_ACTION
+  INTERNAL_ESCALATION
+  REGULATORY_REPORT
+}
+
 enum AMLAlertType {
   LARGE_TRANSACTION
   STRUCTURING
@@ -285,6 +332,7 @@ enum CaseStatus {
   ESCALATED
   RESOLVED
   CLOSED
+  FALSE_POSITIVE
 }
 enum CaseDecision {
   NO_ACTION
