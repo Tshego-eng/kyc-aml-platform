@@ -10,6 +10,13 @@ import {
   getRecentActivity,
   getRiskStatistics,
   getTransactionStatistics,
+  getAMLAlertTrends,
+  getKYCAndRiskAnalytics,
+  getHighRiskCustomers,
+  getRepeatAMLAlertCustomers,
+  getSuspiciousPatterns,
+  getComplianceOfficerWorkload,
+  getRiskIntelligence,
 } from "../services/dashboard.service";
 
 const canViewAuditLogs = (role: string): boolean => {
@@ -217,6 +224,194 @@ export const getDashboardActivityController = async (
 
     return res.status(500).json({
       error: "Failed to retrieve dashboard activity",
+    });
+  }
+};
+
+export const getDashboardAMLTrendsController = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const days = Number(req.query.days ?? 30);
+
+    if (!Number.isInteger(days) || days < 1 || days > 365) {
+      return res.status(400).json({
+        error: "days must be an integer between 1 and 365",
+      });
+    }
+
+    const trends = await getAMLAlertTrends(days);
+
+    await logDashboardView(req, "aml-trends");
+
+    return res.json({
+      trends,
+    });
+  } catch (error) {
+    console.error("Dashboard AML trends error:", error);
+
+    return res.status(500).json({
+      error: "Failed to retrieve AML alert trends",
+    });
+  }
+};
+
+export const getDashboardKYCAndRiskController = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const analytics = await getKYCAndRiskAnalytics();
+
+    await logDashboardView(req, "kyc-risk-analytics");
+
+    return res.json({
+      analytics,
+    });
+  } catch (error) {
+    console.error("Dashboard KYC/risk analytics error:", error);
+
+    return res.status(500).json({
+      error: "Failed to retrieve KYC and risk analytics",
+    });
+  }
+};
+export const getHighRiskCustomersController = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const customers = await getHighRiskCustomers();
+
+    return res.json({
+      customers,
+    });
+  } catch (error) {
+    console.error("High-risk customer analytics error:", error);
+
+    return res.status(500).json({
+      error: "Failed to retrieve high-risk customers",
+    });
+  }
+};
+
+export const getRepeatAMLAlertCustomersController = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const customers = await getRepeatAMLAlertCustomers();
+
+    return res.json({
+      customers,
+    });
+  } catch (error) {
+    console.error("Repeat AML alert analytics error:", error);
+
+    return res.status(500).json({
+      error: "Failed to retrieve repeat AML alert customers",
+    });
+  }
+};
+
+export const getSuspiciousPatternsController = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const patterns = await getSuspiciousPatterns();
+
+    return res.json({
+      patterns,
+    });
+  } catch (error) {
+    console.error("Suspicious pattern analytics error:", error);
+
+    return res.status(500).json({
+      error: "Failed to retrieve suspicious patterns",
+    });
+  }
+};
+
+export const getComplianceOfficerWorkloadController = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const workload = await getComplianceOfficerWorkload();
+
+    return res.json({
+      workload,
+    });
+  } catch (error) {
+    console.error("Compliance officer workload error:", error);
+
+    return res.status(500).json({
+      error: "Failed to retrieve compliance officer workload",
+    });
+  }
+};
+
+export const getRiskIntelligenceController = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const intelligence = await getRiskIntelligence();
+
+    await logDashboardView(req, "risk-intelligence");
+
+    return res.json({
+      intelligence,
+    });
+  } catch (error) {
+    console.error("Risk intelligence error:", error);
+
+    return res.status(500).json({
+      error: "Failed to retrieve risk intelligence",
     });
   }
 };

@@ -1,0 +1,6 @@
+export type CaseDecision =
+  | "CONTINUE_INVESTIGATION"
+  | "FALSE_POSITIVE"
+  | "RESOLVE"
+  | "ESCALATE"
+  | "REGULATORY_REPORT";

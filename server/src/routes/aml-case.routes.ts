@@ -12,6 +12,9 @@ import {
   addCaseEvidenceController,
   getCase,
   updateAMLCaseStatusController,
+  getCaseDecisionRecommendationController,
+  evaluateCaseEscalationController,
+  validateCaseDecisionController,
 } from "../controllers/aml-case.controller";
 
 const router = Router();
@@ -97,6 +100,27 @@ router.get(
     "ANALYST"
   ),
   getCase
+);
+
+router.get(
+  "/aml-cases/:id/decision-recommendation",
+  authenticate,
+  authorize("ADMIN", "COMPLIANCE_OFFICER", "ANALYST"),
+  getCaseDecisionRecommendationController
+);
+
+router.get(
+  "/aml-cases/:id/escalation-evaluation",
+  authenticate,
+  authorize("ADMIN", "COMPLIANCE_OFFICER", "ANALYST"),
+  evaluateCaseEscalationController
+);
+
+router.post(
+  "/aml-cases/:id/validate-decision",
+  authenticate,
+  authorize("ADMIN", "COMPLIANCE_OFFICER"),
+  validateCaseDecisionController
 );
 
 export default router;

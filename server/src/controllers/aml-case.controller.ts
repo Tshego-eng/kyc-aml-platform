@@ -9,6 +9,9 @@ import {
   addCaseEvidence,
   updateAMLCaseStatus,
 } from "../services/aml-case.service";
+import { getCaseDecisionRecommendation } from "../services/case-decision.service";
+import { evaluateCaseEscalation } from "../services/case-escalation.service";
+import { validateCaseDecision } from "../services/case-decision-validation.service";
 import { AuthenticatedRequest } from "../middleware/auth.middleware";
 import prisma from "../lib/prisma";
 import { CaseStatus, RegulatoryDecision } from "@prisma/client";
@@ -513,3 +516,121 @@ export const addCaseEvidenceController = async (
     });
   }
 }
+
+export const getCaseDecisionRecommendationController = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const rawId = req.params.id;
+    const id = Array.isArray(rawId) ? rawId[0] : rawId;
+
+    const result = await getCaseDecisionRecommendation(
+      id
+    );
+
+    return res.json(result);
+  } catch (error) {
+    console.error(
+      "Case decision recommendation error:",
+      error
+    );
+
+    if (error instanceof Error) {
+      if (error.message === "AML_CASE_NOT_FOUND") {
+        return res.status(404).json({
+          error: "AML case not found",
+        });
+      }
+    }
+
+    return res.status(500).json({
+      error: "Failed to generate case decision recommendation",
+    });
+  }
+};
+
+export const evaluateCaseEscalationController = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const rawId = req.params.id;
+    const id = Array.isArray(rawId) ? rawId[0] : rawId;
+
+    const result = await evaluateCaseEscalation(
+      id
+    );
+
+    return res.json(result);
+  } catch (error) {
+    console.error(
+      "Case escalation evaluation error:",
+      error
+    );
+
+    if (error instanceof Error) {
+      if (error.message === "AML_CASE_NOT_FOUND") {
+        return res.status(404).json({
+          error: "AML case not found",
+        });
+      }
+    }
+
+    return res.status(500).json({
+      error: "Failed to evaluate case escalation",
+    });
+  }
+};
+
+export const validateCaseDecisionController = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const rawId = req.params.id;
+    const id = Array.isArray(rawId) ? rawId[0] : rawId;
+    const { decision } = req.body;
+
+    const result = await validateCaseDecision(
+      id,
+      decision
+    );
+
+    return res.json(result);
+  } catch (error) {
+    console.error(
+      "Case decision validation error:",
+      error
+    );
+
+    if (error instanceof Error) {
+      switch (error.message) {
+        case "AML_CASE_NOT_FOUND":
+          return res.status(404).json({
+            error: "AML case not found",
+          });
+
+        case "INVALID_CASE_DECISION":
+          return res.status(400).json({
+            error: "Invalid case decision",
+          });
+
+        case "CASE_ALREADY_FINALIZED":
+          return res.status(409).json({
+            error: "Case has already been finalized",
+          });
+
+        case "CASE_MUST_BE_ESCALATED_BEFORE_REGULATORY_REPORT":
+          return res.status(409).json({
+            error:
+              "Case must be escalated before a regulatory report can be created",
+          });
+      }
+    }
+
+    return res.status(500).json({
+      error: "Failed to validate case decision",
+    });
+  }
+};
