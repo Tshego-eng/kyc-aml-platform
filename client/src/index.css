@@ -61,9 +61,33 @@ body {
   color: var(--color-text-inverse);
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
+  gap: 2rem;
   padding: 1.1rem 2rem;
   border-bottom: 1px solid var(--color-accent);
+}
+
+.app-shell__nav {
+  display: flex;
+  gap: 1.4rem;
+  flex: 1;
+}
+
+.app-shell__nav-link {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-text-inverse);
+  opacity: 0.7;
+  text-decoration: none;
+}
+
+.app-shell__nav-link:hover {
+  opacity: 1;
+}
+
+.app-shell__nav-link--active {
+  opacity: 1;
+  border-bottom: 1px solid var(--color-accent);
+  padding-bottom: 0.2rem;
 }
 
 .app-shell__brand {
@@ -154,4 +178,223 @@ body {
   font-size: 0.9rem;
   text-align: right;
   word-break: break-all;
+}
+
+.landing__session {
+  margin-top: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.landing__session-text {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.landing__logout {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+}
+
+.landing__logout:hover {
+  border-color: var(--color-accent);
+}
+
+/* Auth loading (shown while session is being restored) */
+
+.auth-loading {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+/* Login page */
+
+.login-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-top: 3px solid var(--color-accent);
+  padding: 2.25rem 2rem;
+}
+
+.login-card__brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  margin-bottom: 1.75rem;
+}
+
+.login-card__brand-text {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+}
+
+.login-card__heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.6rem;
+  margin: 0 0 0.35rem;
+}
+
+.login-card__subheading {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin: 0 0 1.75rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.login-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.login-form__label {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.login-form__field input {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-paper);
+  color: var(--color-text);
+}
+
+.login-form__field input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.login-form__field input[aria-invalid="true"] {
+  border-color: #a4372c;
+}
+
+.login-form__error {
+  font-size: 0.8rem;
+  color: #a4372c;
+}
+
+.login-form__submit-error {
+  font-size: 0.85rem;
+  color: #a4372c;
+  background: #fbecea;
+  border: 1px solid #e0b3ac;
+  padding: 0.65rem 0.8rem;
+  margin: 0;
+}
+
+.login-form__submit {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-text-inverse);
+  background: var(--color-ink);
+  border: none;
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  margin-top: 0.4rem;
+}
+
+.login-form__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-form__submit:not(:disabled):hover {
+  background: var(--color-accent);
+}
+
+/* Access Denied page */
+
+.access-denied {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.access-denied__code {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--color-accent);
+  margin: 0 0 0.6rem;
+}
+
+.access-denied__heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  margin: 0 0 1rem;
+}
+
+.access-denied__body {
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  max-width: 60ch;
+  margin: 0 0 1.5rem;
+}
+
+.access-denied__link {
+  color: var(--color-text);
+  font-size: 0.9rem;
+}
+
+/* RBAC diagnostics example page */
+
+.rbac-check {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.rbac-check__heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  margin: 0 0 1rem;
+}
+
+.rbac-check__body {
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  max-width: 60ch;
+  margin: 0 0 1.5rem;
+}
+
+.rbac-check__result {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  padding: 0.85rem 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
 }
