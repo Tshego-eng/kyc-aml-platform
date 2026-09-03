@@ -17,6 +17,22 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { label: "Home", path: "/", allowedRoles: "any-authenticated" },
   {
+    label: "Dashboard",
+    path: "/dashboard",
+    // Backend's dashboardReadRoles (server/src/routes/dashboard.routes.ts)
+    // is ADMIN, COMPLIANCE_OFFICER, ANALYST, VIEWER — every role that
+    // currently exists, so this is equivalent to "any-authenticated".
+    allowedRoles: "any-authenticated",
+  },
+  {
+    label: "Customers",
+    path: "/customers",
+    // Mirrors authorize("ADMIN", "COMPLIANCE_OFFICER", "ANALYST") on
+    // server/src/routes/customer.routes.ts and kyc-review.routes.ts —
+    // VIEWER cannot access customer/KYC data.
+    allowedRoles: ["ADMIN", "COMPLIANCE_OFFICER", "ANALYST"],
+  },
+  {
     label: "Admin diagnostics",
     path: "/rbac-check/admin",
     // Mirrors authorize("ADMIN") on GET /api/rbac/admin

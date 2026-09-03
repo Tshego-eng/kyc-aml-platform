@@ -1,47 +1,40 @@
-import { NavLink, Outlet } from "react-router-dom";
-import { useRole } from "../hooks/useRole";
-import { navItems, canSeeNavItem } from "../routes/navConfig";
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
+import Header from "../components/layout/Header";
+import Sidebar from "../components/layout/Sidebar";
 
+/**
+ * Reusable authenticated shell: header + sidebar + main content outlet.
+ * Always rendered under <ProtectedRoute>, so auth is already guaranteed
+ * by the time this mounts. Future pages plug into the <Outlet /> without
+ * touching header, sidebar, auth, or role logic.
+ */
 function AppShell() {
-  const { hasAnyRole } = useRole();
-
-  const visibleNavItems = navItems.filter((item) =>
-    canSeeNavItem(item, hasAnyRole)
-  );
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="app-shell">
-      <header className="app-shell__header">
-        <div className="app-shell__brand">
-          <span className="app-shell__mark" aria-hidden="true" />
-          <span className="app-shell__title">Sanisa Compliance</span>
-        </div>
+      <Header
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen((open) => !open)}
+      />
 
-        {visibleNavItems.length > 0 && (
-          <nav className="app-shell__nav" aria-label="Primary">
-            {visibleNavItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.path === "/"}
-                className={({ isActive }) =>
-                  isActive
-                    ? "app-shell__nav-link app-shell__nav-link--active"
-                    : "app-shell__nav-link"
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
+      <div className="app-shell__body">
+        <Sidebar open={sidebarOpen} onNavigate={() => setSidebarOpen(false)} />
+
+        {sidebarOpen && (
+          <button
+            type="button"
+            className="app-shell__backdrop"
+            aria-label="Close navigation menu"
+            onClick={() => setSidebarOpen(false)}
+          />
         )}
 
-        <span className="app-shell__tag">KYC / AML Platform</span>
-      </header>
-
-      <main className="app-shell__content">
-        <Outlet />
-      </main>
+        <main className="app-shell__content">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

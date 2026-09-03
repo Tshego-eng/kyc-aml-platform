@@ -75,7 +75,7 @@ function LoginPage() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-card__brand">
-          <span className="app-shell__mark" aria-hidden="true" />
+          <span className="brand-mark" aria-hidden="true" />
           <span className="login-card__brand-text">Sanisa Compliance</span>
         </div>
 

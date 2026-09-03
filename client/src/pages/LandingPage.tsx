@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { API_BASE_URL } from "../services/config";
 import { checkHealth } from "../services/health.service";
 import { ApiError } from "../types/api";
-import { useAuth } from "../context/AuthContext";
 import StatusRow from "../components/StatusRow";
 
 type ConnectivityState =
@@ -22,7 +21,6 @@ function connectivityValue(state: ConnectivityState): string {
 }
 
 function LandingPage() {
-  const { user, logout } = useAuth();
   const [connectivity, setConnectivity] = useState<ConnectivityState>({
     phase: "checking",
   });
@@ -60,26 +58,11 @@ function LandingPage() {
           The compliance workspace foundation is running.
         </h1>
         <p className="landing__body">
-          This is a placeholder screen. The dashboard, and the customer,
-          KYC, AML, and reporting workflows are built on top of this shell
-          in later steps.
+          This is a placeholder screen. The customer, KYC, AML, and
+          reporting workflows are built on top of this shell in later
+          steps.
         </p>
       </div>
-
-      {user && (
-        <div className="landing__session">
-          <span className="landing__session-text">
-            Signed in as {user.name} · {user.role}
-          </span>
-          <button
-            type="button"
-            className="landing__logout"
-            onClick={logout}
-          >
-            Log out
-          </button>
-        </div>
-      )}
 
       <div className="landing__status" role="table" aria-label="Frontend status">
         <StatusRow label="Frontend" value="Running" />
