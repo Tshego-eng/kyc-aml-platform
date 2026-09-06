@@ -1456,3 +1456,61 @@ body {
     flex-direction: column;
   }
 }
+
+/* Decision engine panel */
+
+.decision-block {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.decision-block__label {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.decision-block__reasons {
+  margin: 0 0 1rem;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+  color: var(--color-text);
+}
+
+.decision-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-top: 0.9rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--color-line);
+}
+
+/* Regulatory reporting panel */
+
+.regulatory-report__actions {
+  margin-top: 0.6rem;
+  padding-top: 0;
+  border-top: none;
+}
+
+.profile-panel__subtitle {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 1.25rem 0 0;
+}
+
+.metric-card__link {
+  font-size: 0.78rem;
+  color: var(--color-accent);
+  text-decoration: none;
+  margin-top: 0.15rem;
+}
+
+.metric-card__link:hover,
+.metric-card__link:focus-visible {
+  text-decoration: underline;
+}

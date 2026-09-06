@@ -69,3 +69,25 @@ export function reviewDecisionTone(decision: string): BadgeTone {
   if (decision === "REJECT") return "negative";
   return "warning"; // REQUEST_REVIEW
 }
+
+export function alertStatusTone(status: string): BadgeTone {
+  if (status === "RESOLVED") return "positive";
+  if (status === "FALSE_POSITIVE") return "neutral";
+  if (status === "ESCALATED") return "negative";
+  if (status === "INVESTIGATING") return "warning";
+  return "warning"; // OPEN
+}
+
+export function caseStatusTone(status: string): BadgeTone {
+  if (status === "RESOLVED" || status === "CLOSED") return "positive";
+  if (status === "FALSE_POSITIVE") return "neutral";
+  if (status === "ESCALATED") return "negative";
+  if (status === "INVESTIGATING") return "warning";
+  return "warning"; // OPEN
+}
+
+export function regulatoryReportStatusTone(status: string): BadgeTone {
+  if (status === "ACKNOWLEDGED") return "positive";
+  if (status === "SUBMITTED") return "warning";
+  return "neutral"; // DRAFT
+}

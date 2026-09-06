@@ -33,6 +33,31 @@ export const navItems: NavItem[] = [
     allowedRoles: ["ADMIN", "COMPLIANCE_OFFICER", "ANALYST"],
   },
   {
+    label: "AML Alerts",
+    path: "/aml-alerts",
+    // Mirrors authorize("ADMIN", "COMPLIANCE_OFFICER", "ANALYST") on
+    // server/src/routes/aml-alert.routes.ts.
+    allowedRoles: ["ADMIN", "COMPLIANCE_OFFICER", "ANALYST"],
+  },
+  {
+    label: "AML Cases",
+    path: "/aml-cases",
+    // Mirrors authorize("ADMIN", "COMPLIANCE_OFFICER", "ANALYST") on
+    // server/src/routes/aml-case.routes.ts (read access; assign/status/
+    // notes/evidence are further restricted to ADMIN/COMPLIANCE_OFFICER
+    // within the case detail page itself).
+    allowedRoles: ["ADMIN", "COMPLIANCE_OFFICER", "ANALYST"],
+  },
+  {
+    label: "Risk Intelligence",
+    path: "/risk-intelligence",
+    // Mirrors authorize("ADMIN", "COMPLIANCE_OFFICER", "ANALYST") on
+    // GET /api/dashboard/risk-intelligence specifically (riskIntelligenceRoles
+    // in server/src/routes/dashboard.routes.ts) — stricter than the other
+    // dashboard read endpoints, which also allow VIEWER.
+    allowedRoles: ["ADMIN", "COMPLIANCE_OFFICER", "ANALYST"],
+  },
+  {
     label: "Admin diagnostics",
     path: "/rbac-check/admin",
     // Mirrors authorize("ADMIN") on GET /api/rbac/admin

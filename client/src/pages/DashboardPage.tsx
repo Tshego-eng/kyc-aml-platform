@@ -151,6 +151,8 @@ function DashboardPage() {
       title: "High-risk customers",
       value: summary.risk.highRiskCustomers.toLocaleString(),
       description: `${summary.risk.criticalRiskCustomers.toLocaleString()} critical risk`,
+      linkTo: "/risk-intelligence",
+      linkLabel: "View Risk Intelligence",
     },
     {
       title: "Total transactions",
@@ -191,6 +193,8 @@ function DashboardPage() {
             title={kpi.title}
             value={kpi.value}
             description={kpi.description}
+            linkTo={kpi.linkTo}
+            linkLabel={kpi.linkLabel}
           />
         ))}
       </div>
