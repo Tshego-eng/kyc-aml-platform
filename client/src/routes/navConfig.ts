@@ -58,6 +58,14 @@ export const navItems: NavItem[] = [
     allowedRoles: ["ADMIN", "COMPLIANCE_OFFICER", "ANALYST"],
   },
   {
+    label: "Audit Logs",
+    path: "/audit",
+    // Mirrors authorize("ADMIN", "COMPLIANCE_OFFICER") on GET /api/audit
+    // (server/src/routes/audit.routes.ts) — the only role pair with any
+    // audit access at all; ANALYST and VIEWER cannot see this section.
+    allowedRoles: ["ADMIN", "COMPLIANCE_OFFICER"],
+  },
+  {
     label: "Admin diagnostics",
     path: "/rbac-check/admin",
     // Mirrors authorize("ADMIN") on GET /api/rbac/admin

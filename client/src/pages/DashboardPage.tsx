@@ -339,7 +339,7 @@ function DashboardPage() {
                   {summary.activity.recentAuditLogs.map((log) => (
                     <ActivityItem
                       key={log.id}
-                      title={`${log.user.name} — ${humanizeLabel(log.action)}`}
+                      title={`${log.user?.name ?? "Unknown user"} — ${humanizeLabel(log.action)}`}
                       meta={`${log.entity}${log.entityId ? ` #${log.entityId}` : ""}`}
                       timestamp={log.createdAt}
                     />

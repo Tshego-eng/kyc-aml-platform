@@ -106,7 +106,7 @@ function CaseTimeline({ amlCase, canViewAudit }: CaseTimelineProps) {
             return {
               id: `audit-${log.id}`,
               timestamp: log.createdAt,
-              label: `Status changed by ${log.user.name}`,
+              label: `Status changed by ${log.user?.name ?? "Unknown user"}`,
               detail: `${from} → ${to}`,
             };
           });

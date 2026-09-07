@@ -60,7 +60,7 @@ async function fetchActivity(caseId: string): Promise<ActivityState> {
       .map((log) => ({
         id: log.id,
         timestamp: log.createdAt,
-        label: `${humanizeLabel(log.action)} — ${log.user.name}`,
+        label: `${humanizeLabel(log.action)} — ${log.user?.name ?? "Unknown user"}`,
         detail: describeActivity(log.action, log.details),
       }));
     return { phase: "ready", events };

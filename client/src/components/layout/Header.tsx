@@ -29,7 +29,7 @@ function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
         <div className="app-header__brand">
           <span className="brand-mark" aria-hidden="true" />
           <div className="app-header__brand-text">
-            <span className="app-header__title">Sanisa Compliance</span>
+            <span className="app-header__title">Ram Compliance</span>
             <span className="app-header__tag">KYC / AML Platform</span>
           </div>
         </div>

@@ -152,7 +152,9 @@ export interface RecentAuditLog {
   details: unknown;
   ipAddress: string | null;
   createdAt: string;
-  user: { id: string; name: string; email: string; role: UserRole };
+  // Nullable: AuditLog.userId is optional in prisma/schema.prisma (e.g.
+  // USER_LOGIN_FAILED events have no associated user).
+  user: { id: string; name: string; email: string; role: UserRole } | null;
 }
 
 export interface DashboardActivity {

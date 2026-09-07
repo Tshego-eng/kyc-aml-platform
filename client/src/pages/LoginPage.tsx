@@ -76,7 +76,7 @@ function LoginPage() {
       <div className="login-card">
         <div className="login-card__brand">
           <span className="brand-mark" aria-hidden="true" />
-          <span className="login-card__brand-text">Sanisa Compliance</span>
+          <span className="login-card__brand-text">Ram Compliance</span>
         </div>
 
         <h1 className="login-card__heading">Sign in</h1>

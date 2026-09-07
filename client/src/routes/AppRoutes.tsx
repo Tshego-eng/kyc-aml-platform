@@ -11,6 +11,8 @@ import AMLCasesPage from "../pages/AMLCasesPage";
 import AMLCaseDetailPage from "../pages/AMLCaseDetailPage";
 import InvestigationWorkspacePage from "../pages/InvestigationWorkspacePage";
 import RiskIntelligencePage from "../pages/RiskIntelligencePage";
+import AuditLogPage from "../pages/AuditLogPage";
+import AuditLogDetailPage from "../pages/AuditLogDetailPage";
 import RbacCheckPage from "../pages/RbacCheckPage";
 import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute from "./RoleRoute";
@@ -43,6 +45,15 @@ function AppRoutes() {
               element={<InvestigationWorkspacePage />}
             />
             <Route path="/risk-intelligence" element={<RiskIntelligencePage />} />
+          </Route>
+
+          <Route
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "COMPLIANCE_OFFICER"]} />
+            }
+          >
+            <Route path="/audit" element={<AuditLogPage />} />
+            <Route path="/audit/:id" element={<AuditLogDetailPage />} />
           </Route>
 
           <Route element={<RoleRoute allowedRoles={["ADMIN"]} />}>
