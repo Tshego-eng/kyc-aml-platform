@@ -1,4 +1,8 @@
 import { defineConfig } from "prisma/config";
+import dotenv from "dotenv";
+import path from "path";
+
+dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
 
 export default defineConfig({
   schema: "../prisma/schema.prisma",
@@ -6,6 +10,6 @@ export default defineConfig({
     path: "../prisma/migrations",
   },
   datasource: {
-    url: "postgresql://postgres.smjlptzulfayjlyuowvq:@Tshegofatso16@aws-1-eu-west-1.pooler.supabase.com:5432/postgres"
-  }
+    url: process.env.DATABASE_URL,
+  },
 });

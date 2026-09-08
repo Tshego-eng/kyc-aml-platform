@@ -21,7 +21,9 @@ function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
             sidebarOpen ? "Close navigation menu" : "Open navigation menu"
           }
         >
-          <i className="bi bi-list" aria-hidden="true" />
+          <span aria-hidden="true" />
+          <span aria-hidden="true" />
+          <span aria-hidden="true" />
         </button>
 
         <div className="app-header__brand">
@@ -35,9 +37,6 @@ function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
 
       {user && (
         <div className="app-header__account">
-          <div className="app-header__avatar" aria-hidden="true">
-            {user.name.charAt(0).toUpperCase()}
-          </div>
           <div className="app-header__identity">
             <span className="app-header__name">{user.name}</span>
             <span className="app-header__meta">
@@ -45,8 +44,7 @@ function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
             </span>
           </div>
           <button type="button" className="app-header__logout" onClick={logout}>
-            <i className="bi bi-box-arrow-right" aria-hidden="true" />
-            <span>Log out</span>
+            Log out
           </button>
         </div>
       )}
