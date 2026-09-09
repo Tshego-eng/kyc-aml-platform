@@ -1,9 +1,10 @@
-import { Navigate, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import AppShell from "../layouts/AppShell";
 import LandingPage from "../pages/LandingPage";
 import LoginPage from "../pages/LoginPage";
 import DashboardPage from "../pages/DashboardPage";
 import CustomersPage from "../pages/CustomersPage";
+import CustomerCreatePage from "../pages/CustomerCreatePage";
 import CustomerProfilePage from "../pages/CustomerProfilePage";
 import AMLAlertsPage from "../pages/AMLAlertsPage";
 import AMLAlertDetailPage from "../pages/AMLAlertDetailPage";
@@ -35,6 +36,7 @@ function AppRoutes() {
             }
           >
             <Route path="/customers" element={<CustomersPage />} />
+            <Route path="/customers/new" element={<CustomerCreatePage />} />
             <Route path="/customers/:id" element={<CustomerProfilePage />} />
             <Route path="/aml-alerts" element={<AMLAlertsPage />} />
             <Route path="/aml-alerts/:id" element={<AMLAlertDetailPage />} />
@@ -61,8 +63,6 @@ function AppRoutes() {
           </Route>
         </Route>
       </Route>
-
-      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }

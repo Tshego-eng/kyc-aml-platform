@@ -1562,6 +1562,7 @@ button {
 .check-form__field select,
 .check-form__field input,
 .review-form__field select,
+.review-form__field input,
 .review-form__field textarea {
   font-family: var(--font-body);
   font-size: 0.87rem;
@@ -1575,6 +1576,7 @@ button {
 .check-form__field select:focus,
 .check-form__field input:focus,
 .review-form__field select:focus,
+.review-form__field input:focus,
 .review-form__field textarea:focus {
   outline: none;
   border-color: var(--color-accent);
@@ -1724,4 +1726,173 @@ button {
   .check-list__item {
     flex-direction: column;
   }
+}
+
+/* ==========================================================================
+   PRIMARY ACTION BUTTON (link-styled, e.g. header "+ Create Customer")
+   ========================================================================== */
+.dashboard__refresh--primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-text-inverse);
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  text-decoration: none;
+}
+
+.dashboard__refresh--primary:hover,
+.dashboard__refresh--primary:focus-visible {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* ==========================================================================
+   MODAL
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(14, 21, 18, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 100;
+}
+
+.modal-panel {
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--color-line);
+  position: sticky;
+  top: 0;
+  background: var(--color-surface);
+}
+
+.modal-panel__title {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.modal-panel__close {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--color-paper);
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.modal-panel__close:hover,
+.modal-panel__close:focus-visible {
+  color: var(--color-text);
+  background: var(--color-line);
+}
+
+.modal-panel__body {
+  padding: 1.5rem;
+}
+
+/* ==========================================================================
+   TRANSACTION SIMULATION FORM
+   ========================================================================== */
+.review-form--wide {
+  max-width: none;
+  border-top: none;
+  padding-top: 0;
+}
+
+.simulation-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  background: var(--color-paper);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.9rem;
+  margin: 0;
+}
+
+.simulation-notice i {
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.simulation-result {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.simulation-result__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: var(--color-positive);
+  margin: 0;
+}
+
+.simulation-result__aml {
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-line);
+}
+
+.simulation-result__alert-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: var(--color-warning);
+  margin: 0 0 0.75rem;
+}
+
+/* ==========================================================================
+   CUSTOMER CREATE FORM
+   ========================================================================== */
+.create-customer-form {
+  max-width: 760px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.1rem;
+}
+
+.form-grid__full {
+  grid-column: 1 / -1;
+}
+
+.form-grid .review-form__field input[aria-invalid="true"] {
+  border-color: var(--color-negative);
+}
+
+.create-customer-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  margin-top: 0.25rem;
+  border-top: 1px solid var(--color-line);
 }

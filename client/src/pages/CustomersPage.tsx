@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { getCustomers } from "../services/customer.service";
 import { ApiError } from "../types/api";
 import type { Customer } from "../types/customer";
@@ -88,6 +89,12 @@ function CustomersPage() {
               ? `${state.customers.length.toLocaleString()} customers on file`
               : "Compliance customer records"}
           </p>
+        </div>
+        <div className="dashboard__header-actions">
+          <Link to="/customers/new" className="dashboard__refresh dashboard__refresh--primary">
+            <i className="bi bi-plus-lg" aria-hidden="true" />
+            Create Customer
+          </Link>
         </div>
       </div>
 

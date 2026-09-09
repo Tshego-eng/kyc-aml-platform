@@ -6,8 +6,17 @@ import type {
   EvaluateKYCStatusResponse,
   CreateKYCReviewResponse,
   ReviewDecision,
+  CreateCustomerInput,
+  CreateCustomerResponse,
 } from "../types/customer";
 import type { KycCheckType } from "../types/dashboard";
+
+// POST /api/customers
+export function createCustomer(
+  input: CreateCustomerInput
+): Promise<CreateCustomerResponse> {
+  return httpClient.post<CreateCustomerResponse>("/customers", input);
+}
 
 // GET /api/customers — no server-side search, filter, or pagination
 // support (server/src/controllers/customer.controller.ts ignores

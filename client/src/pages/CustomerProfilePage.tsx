@@ -9,9 +9,16 @@ import {
 import { ApiError } from "../types/api";
 import type { KYCOverviewCustomer, ReviewDecision } from "../types/customer";
 import type { KycCheckType } from "../types/dashboard";
+import type {
+  CreatedTransaction,
+  CreateTransactionResponse,
+} from "../types/transaction";
 import { useRole } from "../hooks/useRole";
 import StatusBadge from "../components/StatusBadge";
+import Modal from "../components/Modal";
+import TransactionSimulationForm from "../components/customers/TransactionSimulationForm";
 import {
+  formatCurrencyAmount,
   formatDateTime,
   humanizeLabel,
   kycStatusTone,
@@ -98,8 +105,25 @@ function CustomerProfilePage() {
   // Mirrors authorize("ADMIN", "COMPLIANCE_OFFICER", "ANALYST") on
   // POST .../kyc-checks and .../kyc-status/evaluate.
   const canPerformKyc = hasAnyRole(["ADMIN", "COMPLIANCE_OFFICER", "ANALYST"]);
+  // Mirrors authorize("ADMIN", "COMPLIANCE_OFFICER", "ANALYST") on
+  // POST /api/customers/:id/transactions (server/src/routes/transaction.routes.ts)
+  // — currently identical to canPerformKyc, kept distinct in case the
+  // two diverge on the backend later.
+  const canSimulateTransactions = hasAnyRole([
+    "ADMIN",
+    "COMPLIANCE_OFFICER",
+    "ANALYST",
+  ]);
+  // No backend endpoint lists a customer's transactions, so this is
+  // session-only: transactions simulated during this visit, newest first.
+  const [transactions, setTransactions] = useState<CreatedTransaction[]>([]);
+  const [showSimulationModal, setShowSimulationModal] = useState(false);
   // Mirrors authorize("ADMIN", "COMPLIANCE_OFFICER") on POST .../kyc-review.
   const canReview = hasAnyRole(["ADMIN", "COMPLIANCE_OFFICER"]);
+
+  const handleTransactionCreated = (result: CreateTransactionResponse) => {
+    setTransactions((prev) => [result.transaction, ...prev]);
+  };
 
   const handlePerformCheck = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -300,6 +324,69 @@ function CustomerProfilePage() {
           )}
         </div>
       </div>
+
+      <div className="profile-panel">
+        <div className="profile-panel__header-row">
+          <h2 className="profile-panel__title">Transactions</h2>
+          {canSimulateTransactions && (
+            <button
+              type="button"
+              className="profile-panel__action"
+              onClick={() => setShowSimulationModal(true)}
+            >
+              <i className="bi bi-plus-lg" aria-hidden="true" />
+              Simulate Transaction
+            </button>
+          )}
+        </div>
+        {transactions.length === 0 ? (
+          <p className="profile-panel__empty">
+            No transactions simulated in this session yet. There is no
+            backend endpoint to list a customer&apos;s past transactions, so
+            only transactions created during this visit appear here.
+          </p>
+        ) : (
+          <ul className="check-list">
+            {transactions.map((transaction) => (
+              <li key={transaction.id} className="check-list__item">
+                <div className="check-list__main">
+                  <span className="check-list__type">
+                    {humanizeLabel(transaction.type)} —{" "}
+                    {formatCurrencyAmount(
+                      transaction.amount,
+                      transaction.currency
+                    )}
+                  </span>
+                  <span className="check-list__notes">
+                    {transaction.country}
+                  </span>
+                </div>
+                <div className="check-list__side">
+                  <StatusBadge
+                    label={humanizeLabel(transaction.status)}
+                    tone={checkStatusTone(transaction.status)}
+                  />
+                  <span className="check-list__date">
+                    {formatDateTime(transaction.timestamp)}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {showSimulationModal && (
+        <Modal
+          title="Simulate Transaction"
+          onClose={() => setShowSimulationModal(false)}
+        >
+          <TransactionSimulationForm
+            customerId={customer.id}
+            onCreated={handleTransactionCreated}
+          />
+        </Modal>
+      )}
 
       <div className="profile-panel">
         <div className="profile-panel__header-row">

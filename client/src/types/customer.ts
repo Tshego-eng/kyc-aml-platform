@@ -109,3 +109,29 @@ export interface CreateKYCReviewResponse {
   review: KYCReviewBase;
   kycStatus: KycStatus;
 }
+
+// POST /api/customers request body — matches CreateCustomerData exactly
+// (server/src/services/customer.service.ts). Only firstName, lastName,
+// dateOfBirth, idNumber, country are required; the rest are optional.
+// Note: the backend has no dedicated validation schema for this route —
+// missing required fields fall through to a generic 500, so client-side
+// required-field checks are the primary defense here.
+export interface CreateCustomerInput {
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  idNumber: string;
+  country: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  occupation?: string;
+  annualIncome?: number;
+  sourceOfFunds?: string;
+}
+
+// POST /api/customers response.
+export interface CreateCustomerResponse {
+  message: string;
+  customer: Customer;
+}
