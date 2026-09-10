@@ -1,5 +1,4 @@
 import prisma from "../lib/prisma";
-import { Prisma } from "@prisma/client";
 
 const HIGH_RISK_COUNTRIES = [
   "CountryA",
@@ -14,12 +13,96 @@ const HIGH_RISK_OCCUPATIONS = [
   "crypto trader",
 ];
 
-const riskRank = {
-  LOW: 1,
-  MEDIUM: 2,
-  HIGH: 3,
-  CRITICAL: 4,
+export const RISK_SCORE_MAX = 100;
+
+export const RISK_LEVEL_THRESHOLDS = {
+  MEDIUM: 25,
+  HIGH: 50,
+  CRITICAL: 75,
 } as const;
+
+const ACTIVE_ALERT_STATUSES = [
+  "OPEN",
+  "INVESTIGATING",
+  "ESCALATED",
+] as const;
+
+const AML_ALERT_RISK_POINTS = {
+  HIGH: 10,
+  CRITICAL: 25,
+  MULTIPLE_HIGH_BONUS: 15,
+} as const;
+
+type RiskAlert = {
+  severity: string;
+  status: string;
+};
+
+export const getAMLAlertRiskContribution = (
+  alerts: RiskAlert[]
+) => {
+  const activeAlerts = alerts.filter((alert) =>
+    ACTIVE_ALERT_STATUSES.includes(
+      alert.status as (typeof ACTIVE_ALERT_STATUSES)[number]
+    )
+  );
+  const highAlertCount = activeAlerts.filter(
+    (alert) => alert.severity === "HIGH"
+  ).length;
+  const criticalAlertCount = activeAlerts.filter(
+    (alert) => alert.severity === "CRITICAL"
+  ).length;
+
+  const score =
+    highAlertCount * AML_ALERT_RISK_POINTS.HIGH +
+    criticalAlertCount * AML_ALERT_RISK_POINTS.CRITICAL +
+    (highAlertCount >= 2
+      ? AML_ALERT_RISK_POINTS.MULTIPLE_HIGH_BONUS
+      : 0);
+  const reasons: string[] = [];
+
+  if (highAlertCount > 0) {
+    reasons.push(
+      `${highAlertCount} unresolved HIGH AML alert${
+        highAlertCount === 1 ? "" : "s"
+      } contributed to customer risk`
+    );
+  }
+
+  if (criticalAlertCount > 0) {
+    reasons.push(
+      `${criticalAlertCount} unresolved CRITICAL AML alert${
+        criticalAlertCount === 1 ? "" : "s"
+      } contributed to customer risk`
+    );
+  }
+
+  if (highAlertCount >= 2) {
+    reasons.push(
+      "Multiple unresolved HIGH AML alerts added a cumulative risk adjustment"
+    );
+  }
+
+  return { score, reasons };
+};
+
+export const getRiskLevelForScore = (
+  score: number
+): "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" => {
+  if (score >= RISK_LEVEL_THRESHOLDS.CRITICAL) {
+    return "CRITICAL";
+  }
+
+  if (score >= RISK_LEVEL_THRESHOLDS.HIGH) {
+    return "HIGH";
+  }
+
+  if (score >= RISK_LEVEL_THRESHOLDS.MEDIUM) {
+    return "MEDIUM";
+  }
+
+  return "LOW";
+};
 
 export const calculateCustomerRisk = async (
   customerId: string
@@ -112,20 +195,16 @@ export const calculateCustomerRisk = async (
     }
   }
 
+  const amlAlertContribution = getAMLAlertRiskContribution(
+    customer.amlAlerts
+  );
+  score += amlAlertContribution.score;
+  reasons.push(...amlAlertContribution.reasons);
+
   // Never allow score above 100
-  score = Math.min(score, 100);
+  score = Math.min(score, RISK_SCORE_MAX);
 
-  let level: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-
-  if (score >= 75) {
-    level = "CRITICAL";
-  } else if (score >= 50) {
-    level = "HIGH";
-  } else if (score >= 25) {
-    level = "MEDIUM";
-  } else {
-    level = "LOW";
-  }
+  const level = getRiskLevelForScore(score);
 
   return {
     score,
@@ -156,36 +235,12 @@ export const createRiskAssessment = async (
 ) => {
   const result = await calculateCustomerRisk(customerId);
 
-  const currentAssessment =
-    await prisma.riskAssessment.findFirst({
-      where: {
-        customerId,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-  const currentRank = currentAssessment
-    ? riskRank[currentAssessment.level]
-    : 0;
-  const newRank = riskRank[result.level];
-  const effectiveResult =
-    currentAssessment && newRank < currentRank
-      ? {
-          score: currentAssessment.score,
-          level: currentAssessment.level,
-          reasons:
-            currentAssessment.reasons as Prisma.InputJsonValue,
-        }
-      : result;
-
   const assessment = await prisma.riskAssessment.create({
     data: {
       customerId,
-      score: effectiveResult.score,
-      level: effectiveResult.level,
-      reasons: effectiveResult.reasons,
+      score: result.score,
+      level: result.level,
+      reasons: result.reasons,
     },
   });
 

@@ -11,7 +11,7 @@ export type AMLRuleType =
 
 export interface AMLRuleResult {
   type: AMLRuleType;
-  severity: "MEDIUM" | "HIGH";
+  severity: "MEDIUM" | "HIGH" | "CRITICAL";
   description: string;
 }
 
@@ -37,6 +37,7 @@ const VELOCITY_TRANSACTION_LIMIT = 10;
 
 const RAPID_MOVEMENT_WINDOW_MINUTES = 60;
 const RAPID_MOVEMENT_RATIO = 0.8;
+const CRITICAL_LARGE_TRANSACTION_MULTIPLIER = 2;
 
 const getAMLThresholds = (): AMLThresholds => ({
   largeTransactionAmount: readPositiveNumber(
@@ -69,6 +70,27 @@ const getAMLThresholds = (): AMLThresholds => ({
     .map(country => country.trim().toLowerCase())
     .filter(Boolean),
 });
+
+export const getLargeTransactionSeverity = (
+  amount: number,
+  country: string,
+  thresholds: Pick<AMLThresholds, "largeTransactionAmount" | "highRiskCountries">
+): "HIGH" | "CRITICAL" | null => {
+  if (amount < thresholds.largeTransactionAmount) {
+    return null;
+  }
+
+  const isHighRiskCountry = thresholds.highRiskCountries.includes(
+    country.trim().toLowerCase()
+  );
+
+  return isHighRiskCountry &&
+    amount >=
+      thresholds.largeTransactionAmount *
+        CRITICAL_LARGE_TRANSACTION_MULTIPLIER
+    ? "CRITICAL"
+    : "HIGH";
+};
 
 export const createTransaction = async (data: {
   customerId: string;
@@ -119,15 +141,25 @@ export const createTransaction = async (data: {
 const checkLargeTransaction = (
   transaction: {
     amount: any;
+    country: string;
   },
   thresholds: AMLThresholds
 ): AMLRuleResult | null => {
-  if (Number(transaction.amount) >= thresholds.largeTransactionAmount) {
+  const severity = getLargeTransactionSeverity(
+    Number(transaction.amount),
+    transaction.country,
+    thresholds
+  );
+
+  if (severity) {
+
     return {
       type: "LARGE_TRANSACTION" as const,
-      severity: "HIGH" as const,
+      severity,
       description:
-        `Transaction exceeds the configured threshold of ${thresholds.largeTransactionAmount}.`,
+        severity === "CRITICAL"
+          ? `Transaction is at least ${CRITICAL_LARGE_TRANSACTION_MULTIPLIER}x the configured threshold and is associated with a high-risk country.`
+          : `Transaction exceeds the configured threshold of ${thresholds.largeTransactionAmount}.`,
     };
   }
 

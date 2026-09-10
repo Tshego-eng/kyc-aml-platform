@@ -15,6 +15,7 @@ import amlAlertRoutes from "./routes/aml-alert.routes";
 import amlCaseRoutes from "./routes/aml-case.routes";
 import dashboardRoutes from "./routes/dashboard.routes";
 import regulatoryReportRoutes from "./routes/regulatory-report.routes";
+import userRoutes from "./routes/user.routes";
 
 
 dotenv.config();
@@ -94,6 +95,8 @@ app.use("/api", dashboardRoutes);
 app.use("/api", amlCaseRoutes);
 
 app.use("/api", regulatoryReportRoutes);
+
+app.use("/api/users", userRoutes);
 
 // -------------------------
 // Start server

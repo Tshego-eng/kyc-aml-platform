@@ -60,9 +60,14 @@ export const getCaseDecisionRecommendation = async (
 
   const reasons: string[] = [];
 
-  if (latestRisk?.level === "CRITICAL") {
+  if (
+    latestRisk?.level === "HIGH" ||
+    latestRisk?.level === "CRITICAL"
+  ) {
     recommendation = "ESCALATE";
-    reasons.push("Customer has a CRITICAL risk assessment.");
+    reasons.push(
+      `Customer has a ${latestRisk.level} risk assessment.`
+    );
   }
 
   if (criticalAlerts.length > 0) {

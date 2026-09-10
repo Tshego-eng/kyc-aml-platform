@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ApiError } from "../types/api";
 
@@ -42,6 +42,11 @@ function LoginPage() {
     return <Navigate to={redirectTo} replace />;
   }
 
+  const registrationMessage =
+    (location.state as { registered?: boolean } | null)?.registered
+      ? "Account created. Sign in with your new credentials."
+      : null;
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitError(null);
@@ -83,6 +88,12 @@ function LoginPage() {
         <p className="login-card__subheading">
           KYC / AML compliance workspace access.
         </p>
+
+        {registrationMessage && (
+          <p className="login-form__success" role="status">
+            {registrationMessage}
+          </p>
+        )}
 
         <form className="login-form" onSubmit={handleSubmit} noValidate>
           <label className="login-form__field">
@@ -133,6 +144,10 @@ function LoginPage() {
             {submitting ? "Signing in…" : "Sign in"}
           </button>
         </form>
+
+        <p className="login-card__footer">
+          Don&apos;t have an account? <Link to="/register">Create one</Link>
+        </p>
       </div>
     </div>
   );

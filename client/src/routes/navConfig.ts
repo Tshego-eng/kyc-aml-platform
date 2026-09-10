@@ -88,6 +88,15 @@ export const navItems: NavItem[] = [
     section: "Administration",
   },
   {
+    label: "User Management",
+    path: "/admin/users",
+    // Mirrors authorize("ADMIN") on GET /api/users and
+    // PATCH /api/users/:id/role (server/src/routes/user.routes.ts).
+    allowedRoles: ["ADMIN"],
+    icon: "bi-people-fill",
+    section: "Administration",
+  },
+  {
     label: "Admin diagnostics",
     path: "/rbac-check/admin",
     // Mirrors authorize("ADMIN") on GET /api/rbac/admin

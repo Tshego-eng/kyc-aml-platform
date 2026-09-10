@@ -1,5 +1,34 @@
 import prisma from "../lib/prisma";
 
+export const getCaseEscalationReasons = (input: {
+  riskLevel?: string | null;
+  criticalAlertCount: number;
+  highAlertCount: number;
+  failedKYCCheckCount: number;
+}) => {
+  const reasons: string[] = [];
+
+  if (input.riskLevel === "CRITICAL") {
+    reasons.push("CRITICAL customer risk level");
+  } else if (input.riskLevel === "HIGH") {
+    reasons.push("HIGH customer risk level");
+  }
+
+  if (input.criticalAlertCount > 0) {
+    reasons.push("Unresolved CRITICAL AML alert");
+  }
+
+  if (input.highAlertCount >= 2) {
+    reasons.push("Multiple unresolved HIGH AML alerts");
+  }
+
+  if (input.failedKYCCheckCount > 0) {
+    reasons.push("Failed KYC verification check");
+  }
+
+  return reasons;
+};
+
 export const evaluateCaseEscalation = async (
   caseId: string
 ) => {
@@ -48,23 +77,12 @@ export const evaluateCaseEscalation = async (
     (check: any) => check.status === "FAILED"
   );
 
-  const reasons: string[] = [];
-
-  if (risk?.level === "CRITICAL") {
-    reasons.push("CRITICAL customer risk level");
-  }
-
-  if (criticalAlerts.length > 0) {
-    reasons.push("Unresolved CRITICAL AML alert");
-  }
-
-  if (highAlerts.length >= 2) {
-    reasons.push("Multiple unresolved HIGH AML alerts");
-  }
-
-  if (failedKYCChecks.length > 0) {
-    reasons.push("Failed KYC verification check");
-  }
+  const reasons = getCaseEscalationReasons({
+    riskLevel: risk?.level,
+    criticalAlertCount: criticalAlerts.length,
+    highAlertCount: highAlerts.length,
+    failedKYCCheckCount: failedKYCChecks.length,
+  });
 
   const shouldEscalate = reasons.length > 0;
 

@@ -30,3 +30,24 @@ export interface LoginResponse {
 export interface CurrentUserResponse {
   user: AuthUser & { createdAt: string };
 }
+
+// Matches server/src/schemas/auth.schema.ts `registerSchema` exactly —
+// only name/email/password. There is deliberately no `role` field: the
+// backend's Zod schema silently strips any unrecognized key (Zod's
+// default "strip" behavior), and registerUser() hardcodes role:
+// "ANALYST" regardless of what's sent, so a role could never be
+// self-assigned even if this type allowed one.
+export interface RegisterRequest {
+  name: string;
+  email: string;
+  password: string;
+}
+
+// Matches the literal response body of POST /api/auth/register
+// (server/src/controllers/auth.controller.ts `register`) — same shape
+// as login's response, since registerUser() also returns { token, user }.
+export interface RegisterResponse {
+  message: string;
+  token: string;
+  user: AuthUser;
+}
