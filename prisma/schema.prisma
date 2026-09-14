@@ -193,6 +193,12 @@ model CaseEvidence {
   fileName    String
   fileType    String?
   description String?
+  category    EvidenceCategory @default(OTHER)
+  // Name of the file as stored on disk under Server/uploads/evidence/.
+  // Nullable so pre-existing metadata-only evidence rows (created before
+  // real file upload existed) remain valid without a backfill.
+  storageKey  String?
+  fileSize    Int?
   createdAt   DateTime @default(now())
 
   case        AMLCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
@@ -245,6 +251,15 @@ enum UserRole {
 
 enum RegulatoryReportType {
   SUSPICIOUS_ACTIVITY
+}
+
+enum EvidenceCategory {
+  IDENTITY_DOCUMENT
+  TRANSACTION_RECORD
+  BANK_STATEMENT
+  CUSTOMER_COMMUNICATION
+  SUPPORTING_DOCUMENT
+  OTHER
 }
 
 enum RegulatoryReportStatus {

@@ -1,77 +1,115 @@
-import { useEffect, useState } from "react";
-import { API_BASE_URL } from "../services/config";
-import { checkHealth } from "../services/health.service";
-import { ApiError } from "../types/api";
-import StatusRow from "../components/StatusRow";
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useRole } from "../hooks/useRole";
+import { navItems, canSeeNavItem } from "../routes/navConfig";
+import { humanizeLabel } from "../utils/format";
 
-type ConnectivityState =
-  | { phase: "checking" }
-  | { phase: "connected"; message: string }
-  | { phase: "error"; message: string };
+const CAPABILITIES = [
+  {
+    icon: "bi-person-badge",
+    title: "KYC & Customer Management",
+    points: ["Customer onboarding", "Identity verification", "KYC status", "Customer risk"],
+  },
+  {
+    icon: "bi-shield-exclamation",
+    title: "AML Monitoring",
+    points: ["Transaction monitoring", "AML rules", "Suspicious activity detection", "Alerts"],
+  },
+  {
+    icon: "bi-briefcase",
+    title: "Case Management",
+    points: ["Case assignment", "Investigation", "Evidence", "Notes", "Case resolution"],
+  },
+  {
+    icon: "bi-graph-up-arrow",
+    title: "Risk Intelligence",
+    points: ["Customer risk scoring", "Risk factors", "Risk trends"],
+  },
+  {
+    icon: "bi-file-earmark-text",
+    title: "Regulatory Reporting",
+    points: ["Regulatory reports", "Submission lifecycle", "Compliance tracking"],
+  },
+  {
+    icon: "bi-clock-history",
+    title: "Audit & Administration",
+    points: ["Audit logs", "RBAC", "User administration"],
+  },
+];
 
-function connectivityValue(state: ConnectivityState): string {
-  switch (state.phase) {
-    case "checking":
-      return "Checking...";
-    case "connected":
-      return `Connected — ${state.message}`;
-    case "error":
-      return `Unreachable — ${state.message}`;
-  }
-}
-
+/**
+ * Authenticated landing page. Quick actions reuse the exact same
+ * navConfig/RBAC filtering as the sidebar (Step 33.4/33.5) — nothing
+ * here is a second permissions system. Capability cards below are
+ * static descriptive copy, not business data, so there's nothing to
+ * fetch. A "recent activity" section was deliberately left out: it
+ * would just duplicate the Dashboard's own recent-activity panel one
+ * click away, at the cost of an extra API call on every visit here.
+ */
 function LandingPage() {
-  const [connectivity, setConnectivity] = useState<ConnectivityState>({
-    phase: "checking",
-  });
+  const { user } = useAuth();
+  const { hasAnyRole } = useRole();
 
-  useEffect(() => {
-    let cancelled = false;
-
-    // Frontend -> httpClient -> GET /api/health -> backend response.
-    // Proves the API client can reach the real backend, using an
-    // existing safe endpoint rather than any invented one.
-    checkHealth()
-      .then((result) => {
-        if (!cancelled) {
-          setConnectivity({ phase: "connected", message: result.message });
-        }
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        const message =
-          error instanceof ApiError
-            ? error.message
-            : "Unable to reach the backend.";
-        setConnectivity({ phase: "error", message });
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const quickActions = navItems.filter(
+    (item) =>
+      item.path !== "/" &&
+      item.path !== "/rbac-check/admin" &&
+      canSeeNavItem(item, hasAnyRole)
+  );
 
   return (
-    <section className="landing">
-      <div className="landing__intro">
-        <h1 className="landing__heading">
-          The compliance workspace foundation is running.
-        </h1>
-        <p className="landing__body">
-          This is a placeholder screen. The customer, KYC, AML, and
-          reporting workflows are built on top of this shell in later
-          steps.
+    <section className="landing-hub">
+      <div className="landing-hub__intro">
+        <h1 className="landing-hub__heading">KYC / AML Compliance Platform</h1>
+        <p className="landing-hub__subheading">
+          Centralized compliance operations for customer due diligence,
+          transaction monitoring, AML investigations, and regulatory
+          reporting.
         </p>
       </div>
 
-      <div className="landing__status" role="table" aria-label="Frontend status">
-        <StatusRow label="Frontend" value="Running" />
-        <StatusRow label="Environment" value={import.meta.env.MODE} />
-        <StatusRow label="API base URL" value={API_BASE_URL} />
-        <StatusRow
-          label="Backend connectivity"
-          value={connectivityValue(connectivity)}
-        />
+      {user && (
+        <div className="landing-hub__welcome">
+          <div>
+            <span className="landing-hub__welcome-label">
+              Welcome back, {user.name}
+            </span>
+            <span className="landing-hub__welcome-role">
+              Role: {humanizeLabel(user.role)}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {quickActions.length > 0 && (
+        <div className="landing-hub__section">
+          <h2 className="dashboard__section-heading">Quick actions</h2>
+          <div className="quick-action-grid">
+            {quickActions.map((item) => (
+              <Link key={item.path} to={item.path} className="quick-action-card">
+                <i className={`bi ${item.icon}`} aria-hidden="true" />
+                <span>{item.label}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="landing-hub__section">
+        <h2 className="dashboard__section-heading">Platform capabilities</h2>
+        <div className="capability-grid">
+          {CAPABILITIES.map((capability) => (
+            <div key={capability.title} className="capability-card">
+              <i className={`bi ${capability.icon}`} aria-hidden="true" />
+              <h3 className="capability-card__title">{capability.title}</h3>
+              <ul className="capability-card__list">
+                {capability.points.map((point) => (
+                  <li key={point}>{point}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

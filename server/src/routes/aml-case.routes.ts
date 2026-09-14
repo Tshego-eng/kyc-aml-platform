@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { authenticate } from "../middleware/auth.middleware";
 import { authorize } from "../middleware/rbac.middleware";
+import { handleEvidenceUpload } from "../middleware/evidenceUpload.middleware";
 
 import {
   createAMLCaseController,
@@ -10,6 +11,8 @@ import {
   assignAMLCaseController,
   addInvestigationNoteController,
   addCaseEvidenceController,
+  getCaseEvidenceFileController,
+  deleteCaseEvidenceController,
   getCase,
   updateAMLCaseStatusController,
   getCaseDecisionRecommendationController,
@@ -88,7 +91,29 @@ router.post(
     "ADMIN",
     "COMPLIANCE_OFFICER"
   ),
+  handleEvidenceUpload,
   addCaseEvidenceController
+);
+
+router.get(
+  "/aml-cases/:id/evidence/:evidenceId/file",
+  authenticate,
+  authorize(
+    "ADMIN",
+    "COMPLIANCE_OFFICER",
+    "ANALYST"
+  ),
+  getCaseEvidenceFileController
+);
+
+router.delete(
+  "/aml-cases/:id/evidence/:evidenceId",
+  authenticate,
+  authorize(
+    "ADMIN",
+    "COMPLIANCE_OFFICER"
+  ),
+  deleteCaseEvidenceController
 );
 
 router.get(

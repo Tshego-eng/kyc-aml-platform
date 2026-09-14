@@ -1,5 +1,5 @@
 import { API_BASE_URL } from "./config";
-import { getAuthToken } from "./authToken";
+import { getAuthToken, notifyUnauthorized } from "./authToken";
 import { ApiError, type ApiErrorKind } from "../types/api";
 
 type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
@@ -57,20 +57,20 @@ function extractErrorDetails(payload: unknown): unknown {
   return undefined;
 }
 
-async function request<T>(
+/**
+ * Shared low-level request path used by both the JSON client and the
+ * multipart (file upload) client below, so auth-header attachment,
+ * error mapping, and the 401 session-expiry signal only live in one
+ * place. Content-Type is left to the caller: JSON requests set it
+ * explicitly, multipart FormData requests must NOT set it (the browser
+ * generates the correct boundary itself).
+ */
+async function requestRaw(
   path: string,
-  method: HttpMethod,
-  options: RequestOptions = {}
-): Promise<T> {
-  const headers: Record<string, string> = {
-    Accept: "application/json",
-  };
-
-  if (options.body !== undefined) {
-    headers["Content-Type"] = "application/json";
-  }
-
+  init: { method: HttpMethod; headers: Record<string, string>; body?: BodyInit; signal?: AbortSignal }
+): Promise<unknown> {
   const token = getAuthToken();
+  const headers: Record<string, string> = { ...init.headers, Accept: "application/json" };
   if (token) {
     // Matches server/src/middleware/auth.middleware.ts, which expects
     // "Authorization: Bearer <token>".
@@ -80,10 +80,10 @@ async function request<T>(
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
-      method,
+      method: init.method,
       headers,
-      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-      signal: options.signal,
+      body: init.body,
+      signal: init.signal,
     });
   } catch {
     throw new ApiError(
@@ -96,6 +96,13 @@ async function request<T>(
   const payload = await parseJsonBody(response);
 
   if (!response.ok) {
+    if (response.status === 401 && token) {
+      // The token we sent was rejected (expired/invalid JWT mid-session).
+      // Distinct from a 401 with no token attached (e.g. bad login
+      // credentials), which must never trigger a logout.
+      notifyUnauthorized();
+    }
+
     throw new ApiError(
       extractErrorMessage(payload, response.status),
       errorKindForStatus(response.status),
@@ -104,7 +111,73 @@ async function request<T>(
     );
   }
 
+  return payload;
+}
+
+async function request<T>(
+  path: string,
+  method: HttpMethod,
+  options: RequestOptions = {}
+): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (options.body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const payload = await requestRaw(path, {
+    method,
+    headers,
+    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    signal: options.signal,
+  });
+
   return payload as T;
+}
+
+async function requestFormData<T>(
+  path: string,
+  method: "POST" | "PATCH",
+  formData: FormData,
+  signal?: AbortSignal
+): Promise<T> {
+  const payload = await requestRaw(path, { method, headers: {}, body: formData, signal });
+  return payload as T;
+}
+
+async function requestBlob(path: string): Promise<Blob> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, { method: "GET", headers });
+  } catch {
+    throw new ApiError(
+      "Unable to reach the server. Check your connection and try again.",
+      "network_error",
+      null
+    );
+  }
+
+  if (!response.ok) {
+    if (response.status === 401 && token) {
+      notifyUnauthorized();
+    }
+    // Error responses here are still JSON ({ error: "..." }), unlike
+    // the successful binary response.
+    const payload = await parseJsonBody(response);
+    throw new ApiError(
+      extractErrorMessage(payload, response.status),
+      errorKindForStatus(response.status),
+      response.status,
+      extractErrorDetails(payload)
+    );
+  }
+
+  return response.blob();
 }
 
 /**
@@ -122,4 +195,11 @@ export const httpClient = {
     request<T>(path, "PATCH", { ...options, body }),
   delete: <T>(path: string, options?: RequestOptions) =>
     request<T>(path, "DELETE", options),
+  // For multipart/form-data uploads (e.g. evidence files) — the browser
+  // sets Content-Type with the correct boundary itself.
+  postFormData: <T>(path: string, formData: FormData, signal?: AbortSignal) =>
+    requestFormData<T>(path, "POST", formData, signal),
+  // For binary downloads (e.g. evidence file view/download) — returns a
+  // Blob instead of parsing JSON.
+  getBlob: (path: string) => requestBlob(path),
 };

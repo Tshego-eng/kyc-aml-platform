@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import fs from "fs";
 
 import {
   createAMLCase,
@@ -7,14 +8,27 @@ import {
   assignAMLCase,
   addInvestigationNote,
   addCaseEvidence,
+  getCaseEvidenceById,
+  deleteCaseEvidenceById,
   updateAMLCaseStatus,
 } from "../services/aml-case.service";
 import { getCaseDecisionRecommendation } from "../services/case-decision.service";
 import { evaluateCaseEscalation } from "../services/case-escalation.service";
 import { validateCaseDecision } from "../services/case-decision-validation.service";
 import { AuthenticatedRequest } from "../middleware/auth.middleware";
+import { createAuditLog } from "../services/audit.service";
+import { evidenceStoragePath, deleteEvidenceFile } from "../lib/evidenceStorage";
 import prisma from "../lib/prisma";
-import { CaseStatus, RegulatoryDecision } from "@prisma/client";
+import { CaseStatus, RegulatoryDecision, EvidenceCategory } from "@prisma/client";
+
+const VALID_EVIDENCE_CATEGORIES: EvidenceCategory[] = [
+  "IDENTITY_DOCUMENT",
+  "TRANSACTION_RECORD",
+  "BANK_STATEMENT",
+  "CUSTOMER_COMMUNICATION",
+  "SUPPORTING_DOCUMENT",
+  "OTHER",
+];
 
 export const createAMLCaseController = async (
   req: Request,
@@ -431,11 +445,18 @@ export const addCaseEvidenceController = async (
       });
     }
 
-    const { fileName, fileType, description } = req.body;
-
-    if (typeof fileName !== "string" || !fileName.trim()) {
+    const file = req.file;
+    if (!file) {
       return res.status(400).json({
-        error: "fileName is required",
+        error: "A file is required",
+      });
+    }
+
+    const { description, category } = req.body;
+
+    if (category !== undefined && !VALID_EVIDENCE_CATEGORIES.includes(category)) {
+      return res.status(400).json({
+        error: `category must be one of: ${VALID_EVIDENCE_CATEGORIES.join(", ")}`,
       });
     }
 
@@ -446,13 +467,34 @@ export const addCaseEvidenceController = async (
       });
     }
 
+    // The real, original filename is always used — never a
+    // client-supplied "fileName" field, since that field no longer
+    // exists on this endpoint now that an actual file is required.
     const evidence = await addCaseEvidence(
       caseId,
       uploadedBy,
-      fileName,
-      typeof fileType === "string" ? fileType : undefined,
-      typeof description === "string" ? description : undefined
+      file.originalname,
+      file.mimetype,
+      typeof description === "string" ? description : undefined,
+      category as EvidenceCategory | undefined,
+      file.filename,
+      file.size
     );
+
+    await createAuditLog({
+      userId: uploadedBy,
+      action: "EVIDENCE_UPLOADED",
+      entity: "CaseEvidence",
+      entityId: evidence.id,
+      details: {
+        caseId,
+        fileName: evidence.fileName,
+        fileType: evidence.fileType,
+        category: evidence.category,
+        fileSize: evidence.fileSize,
+      },
+      ipAddress: req.ip,
+    });
 
     return res.status(201).json({
       message: "Case evidence added successfully",
@@ -475,6 +517,121 @@ export const addCaseEvidenceController = async (
 
     return res.status(500).json({
       error: "Failed to add case evidence",
+    });
+  }
+};
+
+export const getCaseEvidenceFileController = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const { id, evidenceId: rawEvidenceId } = req.params;
+    const caseId = Array.isArray(id) ? id[0] : id;
+    const evidenceId = Array.isArray(rawEvidenceId)
+      ? rawEvidenceId[0]
+      : rawEvidenceId;
+
+    if (!caseId || !evidenceId) {
+      return res.status(400).json({
+        error: "Case id and evidence id are required",
+      });
+    }
+
+    const evidence = await getCaseEvidenceById(caseId, evidenceId);
+
+    if (!evidence.storageKey) {
+      return res.status(404).json({
+        error: "No file was uploaded for this evidence record",
+      });
+    }
+
+    const filePath = evidenceStoragePath(evidence.storageKey);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        error: "The evidence file could not be found in storage",
+      });
+    }
+
+    res.setHeader(
+      "Content-Type",
+      evidence.fileType ?? "application/octet-stream"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${encodeURIComponent(evidence.fileName)}"`
+    );
+    return res.sendFile(filePath);
+  } catch (error) {
+    if (error instanceof Error && error.message === "EVIDENCE_NOT_FOUND") {
+      return res.status(404).json({
+        error: "Evidence not found for this case",
+      });
+    }
+
+    console.error("Get case evidence file error:", error);
+    return res.status(500).json({
+      error: "Failed to retrieve evidence file",
+    });
+  }
+};
+
+export const deleteCaseEvidenceController = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const { id, evidenceId: rawEvidenceId } = req.params;
+    const caseId = Array.isArray(id) ? id[0] : id;
+    const evidenceId = Array.isArray(rawEvidenceId)
+      ? rawEvidenceId[0]
+      : rawEvidenceId;
+
+    if (!caseId || !evidenceId) {
+      return res.status(400).json({
+        error: "Case id and evidence id are required",
+      });
+    }
+
+    const deletedBy = req.user?.userId;
+    if (!deletedBy) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const evidence = await deleteCaseEvidenceById(caseId, evidenceId);
+
+    if (evidence.storageKey) {
+      deleteEvidenceFile(evidence.storageKey);
+    }
+
+    await createAuditLog({
+      userId: deletedBy,
+      action: "EVIDENCE_DELETED",
+      entity: "CaseEvidence",
+      entityId: evidenceId,
+      details: {
+        caseId,
+        fileName: evidence.fileName,
+        category: evidence.category,
+      },
+      ipAddress: req.ip,
+    });
+
+    return res.json({
+      message: "Case evidence deleted successfully",
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "EVIDENCE_NOT_FOUND") {
+      return res.status(404).json({
+        error: "Evidence not found for this case",
+      });
+    }
+
+    console.error("Delete case evidence error:", error);
+    return res.status(500).json({
+      error: "Failed to delete case evidence",
     });
   }
 };

@@ -11,6 +11,7 @@ import type {
   AddEvidenceResponse,
   AMLCaseStatus,
   RegulatoryDecision,
+  EvidenceCategory,
 } from "../types/aml";
 import type {
   DecisionRecommendation,
@@ -101,19 +102,48 @@ export function addInvestigationNote(
   });
 }
 
-// POST /api/aml-cases/:id/evidence — metadata only ({ fileName,
-// fileType?, description? }); the backend does not accept file uploads.
+// POST /api/aml-cases/:id/evidence — real multipart file upload. The
+// backend now requires an actual file (server/src/middleware/evidenceUpload.middleware.ts
+// enforces allowed types and a 10MB limit); fileName is no longer a
+// client-supplied field — the backend uses the uploaded file's real
+// original filename.
 export function addCaseEvidence(
   caseId: string,
-  fileName: string,
-  fileType?: string,
+  file: File,
+  category?: EvidenceCategory,
   description?: string
 ): Promise<AddEvidenceResponse> {
-  return httpClient.post<AddEvidenceResponse>(`/aml-cases/${caseId}/evidence`, {
-    fileName,
-    ...(fileType ? { fileType } : {}),
-    ...(description ? { description } : {}),
-  });
+  const formData = new FormData();
+  formData.append("file", file);
+  if (category) formData.append("category", category);
+  if (description) formData.append("description", description);
+  return httpClient.postFormData<AddEvidenceResponse>(
+    `/aml-cases/${caseId}/evidence`,
+    formData
+  );
+}
+
+// DELETE /api/aml-cases/:id/evidence/:evidenceId — ADMIN/COMPLIANCE_OFFICER only.
+export function deleteCaseEvidence(
+  caseId: string,
+  evidenceId: string
+): Promise<{ message: string }> {
+  return httpClient.delete<{ message: string }>(
+    `/aml-cases/${caseId}/evidence/${evidenceId}`
+  );
+}
+
+// GET /api/aml-cases/:id/evidence/:evidenceId/file — binary response,
+// not JSON, so it's fetched as an authenticated Blob rather than via
+// httpClient's JSON-only methods (the backend only reads the
+// Authorization header, so a plain <a href> without it would 401).
+export function getCaseEvidenceFile(
+  caseId: string,
+  evidenceId: string
+): Promise<Blob> {
+  return httpClient.getBlob(
+    `/aml-cases/${caseId}/evidence/${evidenceId}/file`
+  );
 }
 
 // GET /api/aml-cases/:id/decision-recommendation — read-only, computed

@@ -1,5 +1,5 @@
 import prisma from "../lib/prisma";
-import { CaseStatus, RegulatoryDecision } from "@prisma/client";
+import { CaseStatus, RegulatoryDecision, EvidenceCategory } from "@prisma/client";
 
 
 export const createAMLCase = async (
@@ -139,7 +139,20 @@ export const getAMLCaseById = async (
           },
         },
 
-        evidence: true,
+        evidence: {
+          include: {
+            uploader: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
       },
     });
 
@@ -252,7 +265,10 @@ export const addCaseEvidence = async (
   uploadedBy: string,
   fileName: string,
   fileType?: string,
-  description?: string
+  description?: string,
+  category?: EvidenceCategory,
+  storageKey?: string,
+  fileSize?: number
 ) => {
   const amlCase = await prisma.aMLCase.findUnique({
     where: {
@@ -277,6 +293,9 @@ export const addCaseEvidence = async (
       ...(description !== undefined && {
         description: description.trim(),
       }),
+      ...(category !== undefined && { category }),
+      ...(storageKey !== undefined && { storageKey }),
+      ...(fileSize !== undefined && { fileSize }),
     },
     include: {
       uploader: {
@@ -288,6 +307,32 @@ export const addCaseEvidence = async (
       },
     },
   });
+};
+
+export const getCaseEvidenceById = async (
+  caseId: string,
+  evidenceId: string
+) => {
+  const evidence = await prisma.caseEvidence.findUnique({
+    where: { id: evidenceId },
+  });
+
+  // Verify the evidence actually belongs to the case in the URL —
+  // prevents accessing evidence from an unrelated case via a guessed ID.
+  if (!evidence || evidence.caseId !== caseId) {
+    throw new Error("EVIDENCE_NOT_FOUND");
+  }
+
+  return evidence;
+};
+
+export const deleteCaseEvidenceById = async (
+  caseId: string,
+  evidenceId: string
+) => {
+  const evidence = await getCaseEvidenceById(caseId, evidenceId);
+  await prisma.caseEvidence.delete({ where: { id: evidenceId } });
+  return evidence;
 };
 
 export async function getCaseById(caseId: string) {

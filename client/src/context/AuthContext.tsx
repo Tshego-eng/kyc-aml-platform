@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { login as loginRequest, getCurrentUser } from "../services/auth.service";
-import { setAuthToken } from "../services/authToken";
+import { setAuthToken, onUnauthorized } from "../services/authToken";
 import type { AuthUser } from "../types/auth";
 
 // The backend issues a stateless JWT with no server-side session, so the
@@ -87,6 +87,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setStatus("unauthenticated");
   }, []);
+
+  // If any authenticated request gets rejected with 401 (e.g. the JWT
+  // expired mid-session), httpClient reports it here via authToken's
+  // listener; without this, the app would stay stuck in an
+  // "authenticated but every request fails" state until a manual
+  // refresh forced session restoration to notice.
+  useEffect(() => {
+    onUnauthorized(logout);
+    return () => onUnauthorized(null);
+  }, [logout]);
 
   return (
     <AuthContext.Provider value={{ status, user, token, login, logout }}>

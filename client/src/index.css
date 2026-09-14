@@ -409,7 +409,6 @@ button {
 .customers-page,
 .customer-profile,
 .rbac-check,
-.landing,
 .access-denied {
   width: 100%;
   max-width: 1180px;
@@ -1203,61 +1202,137 @@ button {
 }
 
 /* ==========================================================================
-   LANDING (infra status page)
+   LANDING HUB (authenticated home page)
    ========================================================================== */
-.landing {
-  max-width: 680px;
+.landing-hub {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
 }
 
-.landing__intro {
-  margin-bottom: 0.5rem;
+.landing-hub__intro {
+  max-width: 62ch;
 }
 
-.landing__heading {
-  font-size: clamp(1.6rem, 3vw, 2.1rem);
-  margin: 0 0 1rem;
-  max-width: 22ch;
+.landing-hub__heading {
+  font-size: clamp(1.7rem, 3vw, 2.2rem);
+  margin: 0 0 0.6rem;
 }
 
-.landing__body {
-  font-size: 1rem;
+.landing-hub__subheading {
+  font-size: 0.98rem;
   color: var(--color-text-muted);
-  max-width: 60ch;
   margin: 0;
 }
 
-.landing__status {
+.landing-hub__welcome {
+  background: var(--color-ink);
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-xl);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.landing-hub__welcome-label {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.landing-hub__welcome-role {
+  display: block;
+  font-size: 0.85rem;
+  color: rgba(238, 243, 236, 0.7);
+  margin-top: 0.2rem;
+}
+
+.landing-hub__section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.quick-action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.9rem;
+}
+
+.quick-action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 1.1rem 1.2rem;
+  text-decoration: none;
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.quick-action-card i {
+  font-size: 1.4rem;
+  color: var(--color-accent);
+}
+
+.quick-action-card:hover,
+.quick-action-card:focus-visible {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.capability-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.capability-card {
   background: var(--color-surface);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
-  overflow: hidden;
+  padding: 1.4rem 1.5rem;
 }
 
-.status-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1.5rem;
-  padding: 0.9rem 1.25rem;
-  border-bottom: 1px solid var(--color-line);
+.capability-card i {
+  font-size: 1.3rem;
+  color: var(--color-accent);
 }
 
-.status-row:last-child {
-  border-bottom: none;
+.capability-card__title {
+  font-size: 0.98rem;
+  margin: 0.7rem 0 0.6rem;
 }
 
-.status-row__label {
+.capability-card__list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
   color: var(--color-text-muted);
-  font-size: 0.85rem;
-  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 
-.status-row__value {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  text-align: right;
-  word-break: break-all;
+@media (max-width: 640px) {
+  .landing-hub__welcome {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 /* ==========================================================================
@@ -1941,4 +2016,94 @@ button {
 .user-role-cell .profile-panel__note {
   flex-basis: 100%;
   margin-top: 0.3rem;
+}
+
+/* ==========================================================================
+   EVIDENCE CARDS (real file upload — Step 41.8)
+   ========================================================================== */
+.evidence-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.evidence-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-paper);
+  flex-wrap: wrap;
+}
+
+.evidence-card__icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.evidence-card__main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+  min-width: 180px;
+}
+
+.evidence-card__filename {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.evidence-card__category {
+  font-size: 0.75rem;
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.evidence-card__meta {
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+}
+
+.evidence-card__description {
+  font-size: 0.8rem;
+  color: var(--color-text);
+  margin-top: 0.15rem;
+}
+
+.evidence-card__actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.evidence-card__no-file {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  align-self: center;
+}
+
+.profile-panel__action--danger {
+  color: var(--color-negative);
+}
+
+.profile-panel__action--danger:hover:not(:disabled),
+.profile-panel__action--danger:focus-visible:not(:disabled) {
+  border-color: var(--color-negative);
 }

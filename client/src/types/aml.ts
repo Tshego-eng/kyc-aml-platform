@@ -164,6 +164,14 @@ export interface InvestigationNote {
   author: AuthorRef;
 }
 
+export type EvidenceCategory =
+  | "IDENTITY_DOCUMENT"
+  | "TRANSACTION_RECORD"
+  | "BANK_STATEMENT"
+  | "CUSTOMER_COMMUNICATION"
+  | "SUPPORTING_DOCUMENT"
+  | "OTHER";
+
 export interface CaseEvidence {
   id: string;
   caseId: string;
@@ -171,6 +179,11 @@ export interface CaseEvidence {
   fileName: string;
   fileType: string | null;
   description: string | null;
+  category: EvidenceCategory;
+  // Present only for evidence uploaded via the real file-upload flow;
+  // null for legacy metadata-only records created before it existed.
+  storageKey: string | null;
+  fileSize: number | null;
   createdAt: string;
   uploader: AuthorRef;
 }
