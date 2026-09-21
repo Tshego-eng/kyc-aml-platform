@@ -17,7 +17,6 @@ import dashboardRoutes from "./routes/dashboard.routes";
 import regulatoryReportRoutes from "./routes/regulatory-report.routes";
 import userRoutes from "./routes/user.routes";
 
-
 dotenv.config();
 
 const app = express();
@@ -25,14 +24,35 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // -------------------------
+// Environment
+// -------------------------
+
+const NODE_ENV = process.env.NODE_ENV || "development";
+const isProduction = NODE_ENV === "production";
+
+// -------------------------
 // Security middleware
 // -------------------------
 
 app.use(helmet());
 
+// The allowed frontend origin is environment-driven so the same build
+// works in dev and production without code changes. In production this
+// is required — failing fast at startup on a missing CORS_ORIGIN is
+// safer than silently falling back to a permissive or wrong origin. In
+// development, falling back to the existing local Vite dev server
+// origin preserves the previous behavior exactly.
+const corsOrigin = process.env.CORS_ORIGIN;
+
+if (isProduction && !corsOrigin) {
+  throw new Error(
+    "CORS_ORIGIN must be set in production (e.g. https://your-frontend.pages.dev)."
+  );
+}
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: corsOrigin || "http://localhost:5173",
     credentials: true,
   })
 );
@@ -58,6 +78,21 @@ const apiLimiter = rateLimit({
 });
 
 app.use("/api", apiLimiter);
+
+// Stricter limiter specifically for login, on top of the general API
+// limiter above (both apply to this one path) — reduces brute-force/
+// credential-stuffing exposure without touching every other endpoint.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Too many login attempts. Please try again later.",
+  },
+});
+
+app.use("/api/auth/login", authLimiter);
 
 // -------------------------
 // Routes
@@ -92,16 +127,38 @@ app.use("/api", amlCaseRoutes);
 
 app.use("/api", dashboardRoutes);
 
-app.use("/api", amlCaseRoutes);
-
 app.use("/api", regulatoryReportRoutes);
 
 app.use("/api/users", userRoutes);
+
+// -------------------------
+// Global error handler (must be registered last, after all routes)
+// -------------------------
+
+app.use(
+  (
+    err: Error,
+    _req: express.Request,
+    res: express.Response,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _next: express.NextFunction
+  ) => {
+    // Full detail always goes to server-side logs, never to the client.
+    console.error("Unhandled error:", err);
+
+    res.status(500).json({
+      error: "Internal server error",
+      // Only include the message (never a stack trace) outside
+      // production, as a local-dev convenience.
+      ...(isProduction ? {} : { details: err.message }),
+    });
+  }
+);
 
 // -------------------------
 // Start server
 // -------------------------
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT} (${NODE_ENV})`);
 });
