@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import fs from "fs";
+import { pipeline } from "stream/promises";
 
 import {
   createAMLCase,
@@ -17,7 +17,7 @@ import { evaluateCaseEscalation } from "../services/case-escalation.service";
 import { validateCaseDecision } from "../services/case-decision-validation.service";
 import { AuthenticatedRequest } from "../middleware/auth.middleware";
 import { createAuditLog } from "../services/audit.service";
-import { evidenceStoragePath, deleteEvidenceFile } from "../lib/evidenceStorage";
+import { getEvidenceStorage } from "../lib/evidenceStorage";
 import prisma from "../lib/prisma";
 import { CaseStatus, RegulatoryDecision, EvidenceCategory } from "@prisma/client";
 
@@ -470,16 +470,28 @@ export const addCaseEvidenceController = async (
     // The real, original filename is always used — never a
     // client-supplied "fileName" field, since that field no longer
     // exists on this endpoint now that an actual file is required.
-    const evidence = await addCaseEvidence(
-      caseId,
-      uploadedBy,
-      file.originalname,
-      file.mimetype,
-      typeof description === "string" ? description : undefined,
-      category as EvidenceCategory | undefined,
-      file.filename,
-      file.size
-    );
+    const storageKey = await getEvidenceStorage().upload({
+      originalName: file.originalname,
+      contentType: file.mimetype,
+      data: file.buffer,
+    });
+
+    let evidence;
+    try {
+      evidence = await addCaseEvidence(
+        caseId,
+        uploadedBy,
+        file.originalname,
+        file.mimetype,
+        typeof description === "string" ? description : undefined,
+        category as EvidenceCategory | undefined,
+        storageKey,
+        file.size
+      );
+    } catch (error) {
+      await getEvidenceStorage().delete(storageKey);
+      throw error;
+    }
 
     await createAuditLog({
       userId: uploadedBy,
@@ -546,8 +558,8 @@ export const getCaseEvidenceFileController = async (
       });
     }
 
-    const filePath = evidenceStoragePath(evidence.storageKey);
-    if (!fs.existsSync(filePath)) {
+    const file = await getEvidenceStorage().get(evidence.storageKey);
+    if (!file) {
       return res.status(404).json({
         error: "The evidence file could not be found in storage",
       });
@@ -561,12 +573,18 @@ export const getCaseEvidenceFileController = async (
       "Content-Disposition",
       `inline; filename="${encodeURIComponent(evidence.fileName)}"`
     );
-    return res.sendFile(filePath);
+    await pipeline(file, res);
+    return;
   } catch (error) {
     if (error instanceof Error && error.message === "EVIDENCE_NOT_FOUND") {
       return res.status(404).json({
         error: "Evidence not found for this case",
       });
+    }
+
+    if (res.headersSent) {
+      res.destroy(error instanceof Error ? error : undefined);
+      return;
     }
 
     console.error("Get case evidence file error:", error);
@@ -600,11 +618,13 @@ export const deleteCaseEvidenceController = async (
       });
     }
 
-    const evidence = await deleteCaseEvidenceById(caseId, evidenceId);
+    const evidence = await getCaseEvidenceById(caseId, evidenceId);
 
     if (evidence.storageKey) {
-      deleteEvidenceFile(evidence.storageKey);
+      await getEvidenceStorage().delete(evidence.storageKey);
     }
+
+    await deleteCaseEvidenceById(caseId, evidenceId);
 
     await createAuditLog({
       userId: deletedBy,

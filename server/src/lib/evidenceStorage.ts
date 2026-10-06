@@ -1,37 +1,83 @@
-import fs from "fs";
+import crypto from "crypto";
 import path from "path";
+import type { Readable } from "stream";
+import { LocalEvidenceStorage } from "./evidenceStorage.local";
+import { R2EvidenceStorage } from "./evidenceStorage.r2";
 
-/**
- * Evidence files are stored on local disk under Server/uploads/evidence/,
- * served only through the authenticated download endpoint (never via
- * express.static), so access always goes through the same RBAC check as
- * the rest of the case. This directory is gitignored — see root
- * .gitignore. If this project moves to a cloud deployment later, this
- * module is the only place that needs to change (swap the
- * read/write/delete functions for an object-storage SDK call) — nothing
- * else in the codebase should need to know where files physically live.
- */
-const EVIDENCE_STORAGE_DIR = path.resolve(
-  process.cwd(),
+export interface EvidenceStorage {
+  upload(input: {
+    originalName: string;
+    contentType: string;
+    data: Buffer;
+  }): Promise<string>;
+  get(storageKey: string): Promise<Readable | null>;
+  delete(storageKey: string): Promise<void>;
+}
+
+export const EVIDENCE_STORAGE_DIR = path.resolve(
+  __dirname,
+  "..",
+  "..",
   "uploads",
   "evidence"
 );
 
-export function ensureEvidenceStorageDir(): void {
-  fs.mkdirSync(EVIDENCE_STORAGE_DIR, { recursive: true });
+export function createEvidenceStorageKey(originalName: string): string {
+  const extension = path
+    .extname(originalName)
+    .toLowerCase()
+    .replace(/[^a-z0-9.]/g, "")
+    .slice(0, 20);
+  return `${crypto.randomUUID()}${extension}`;
 }
 
-export function evidenceStoragePath(storageKey: string): string {
-  return path.join(EVIDENCE_STORAGE_DIR, storageKey);
-}
+let storageInstance: EvidenceStorage | undefined;
 
-export function deleteEvidenceFile(storageKey: string): void {
-  const filePath = evidenceStoragePath(storageKey);
-  fs.rm(filePath, { force: true }, (error) => {
-    if (error) {
-      console.error(`Failed to delete evidence file ${storageKey}:`, error);
+export function getEvidenceStorage(): EvidenceStorage {
+  if (storageInstance) return storageInstance;
+
+  const storageType = process.env.EVIDENCE_STORAGE || "local";
+  if (storageType === "local") {
+    const storage = new LocalEvidenceStorage();
+    storageInstance = storage;
+    return storage;
+  }
+
+  if (storageType === "r2") {
+    const requiredVariables = [
+      "R2_ACCOUNT_ID",
+      "R2_ACCESS_KEY_ID",
+      "R2_SECRET_ACCESS_KEY",
+      "R2_BUCKET_NAME",
+    ];
+    const missingVariables = requiredVariables.filter(
+      (name) => !process.env[name]
+    );
+
+    if (missingVariables.length > 0) {
+      throw new Error(
+        `R2 evidence storage is missing required configuration: ${missingVariables.join(", ")}`
+      );
     }
-  });
+
+    const storage = new R2EvidenceStorage({
+      accountId: process.env.R2_ACCOUNT_ID!,
+      accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+      bucketName: process.env.R2_BUCKET_NAME!,
+      endpoint:
+        process.env.R2_ENDPOINT ||
+        `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    });
+    storageInstance = storage;
+    return storage;
+  }
+
+  throw new Error(
+    `Unsupported EVIDENCE_STORAGE value "${storageType}". Use "local" or "r2".`
+  );
 }
 
-export const EVIDENCE_STORAGE_DIR_PATH = EVIDENCE_STORAGE_DIR;
+export function validateEvidenceStorageConfiguration(): void {
+  getEvidenceStorage();
+}

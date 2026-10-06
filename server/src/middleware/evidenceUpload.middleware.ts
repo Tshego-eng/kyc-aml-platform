@@ -1,13 +1,5 @@
 import multer from "multer";
 import type { Request, Response, NextFunction } from "express";
-import path from "path";
-import crypto from "crypto";
-import {
-  ensureEvidenceStorageDir,
-  EVIDENCE_STORAGE_DIR_PATH,
-} from "../lib/evidenceStorage";
-
-ensureEvidenceStorageDir();
 
 // Sensible document/image formats for an AML investigation file — no
 // executables or scripts. Extend this list if a genuine new document
@@ -26,21 +18,8 @@ const ALLOWED_MIME_TYPES = new Set([
 
 export const MAX_EVIDENCE_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, callback) => {
-    callback(null, EVIDENCE_STORAGE_DIR_PATH);
-  },
-  filename: (_req, file, callback) => {
-    // Random on-disk name — never trust/reuse the client-supplied
-    // filename as a path component. The real original filename is kept
-    // separately in CaseEvidence.fileName for display/download.
-    const extension = path.extname(file.originalname).toLowerCase();
-    callback(null, `${crypto.randomUUID()}${extension}`);
-  },
-});
-
 export const evidenceUpload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: MAX_EVIDENCE_FILE_SIZE_BYTES },
   fileFilter: (_req, file, callback) => {
     if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {

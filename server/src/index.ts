@@ -16,8 +16,10 @@ import amlCaseRoutes from "./routes/aml-case.routes";
 import dashboardRoutes from "./routes/dashboard.routes";
 import regulatoryReportRoutes from "./routes/regulatory-report.routes";
 import userRoutes from "./routes/user.routes";
+import { validateEvidenceStorageConfiguration } from "./lib/evidenceStorage";
 
 dotenv.config();
+validateEvidenceStorageConfiguration();
 
 const app = express();
 
