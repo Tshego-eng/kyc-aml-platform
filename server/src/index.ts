@@ -161,6 +161,6 @@ app.use(
 // Start server
 // -------------------------
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT} (${NODE_ENV})`);
+app.listen(Number(PORT), "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT} (${NODE_ENV})`);
 });
