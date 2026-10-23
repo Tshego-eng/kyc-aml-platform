@@ -1,5 +1,6 @@
 /**
  * Runtime configuration read from environment variables (see .env.example).
+ * Accepts either the API origin or an origin that already ends in /api.
  * Nothing here should ever hold a hardcoded production value.
  */
 
@@ -12,4 +13,8 @@ if (!rawApiBaseUrl) {
   );
 }
 
-export const API_BASE_URL: string = rawApiBaseUrl.replace(/\/+$/, "");
+const normalizedApiBaseUrl = rawApiBaseUrl.replace(/\/+$/, "");
+
+export const API_BASE_URL: string = /\/api$/i.test(normalizedApiBaseUrl)
+  ? normalizedApiBaseUrl
+  : `${normalizedApiBaseUrl}/api`;
