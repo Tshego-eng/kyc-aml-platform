@@ -9,7 +9,7 @@ import type {
 
 // POST /api/auth/login
 export function login(credentials: LoginRequest): Promise<LoginResponse> {
-  return httpClient.post<LoginResponse>("/auth/login", credentials);
+  return httpClient.post<LoginResponse>("/api/auth/login", credentials);
 }
 
 // POST /api/auth/register — always creates an ANALYST account; the
@@ -21,12 +21,12 @@ export function login(credentials: LoginRequest): Promise<LoginResponse> {
 export function register(
   input: RegisterRequest
 ): Promise<RegisterResponse> {
-  return httpClient.post<RegisterResponse>("/auth/register", input);
+  return httpClient.post<RegisterResponse>("/api/auth/register", input);
 }
 
 // GET /api/auth/me — used to validate a stored token and fetch the
 // current user on page reload. There is no logout endpoint: JWT auth
 // here is stateless, so logout is purely a frontend state/token clear.
 export function getCurrentUser(): Promise<CurrentUserResponse> {
-  return httpClient.get<CurrentUserResponse>("/auth/me");
+  return httpClient.get<CurrentUserResponse>("/api/auth/me");
 }
